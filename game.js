@@ -1,9 +1,14 @@
 function play(){
 	//setup
+/*
+	var audio = new Audio('audio_file.mp3');
+	audio.play();
+*/
+
 	var c = document.getElementById("game_window");
 	var ctx = c.getContext("2d");
 
-	var floor_height = 80;
+	var floor_height = 90;
 	var accel = .5;
 	var velocity = 0;
 	var position = 0;
@@ -24,12 +29,13 @@ function play(){
 
 
 	function render(){
-		//clear
-		ctx.clearRect(0, 0, c.width, c.height);
+		//trail at the end
+		ctx.fillStyle = "rgba(255, 255, 255, .2)";
+		ctx.fillRect(0, 0, c.width, c.height);
 
 		//draw
 		ctx.drawImage(map, time/10, 0, c.width, 240, 0, 0, c.width, c.height);
-		ctx.drawImage(runner, 100 + runner_loc, position, 64, 64);
+		ctx.drawImage(runner, 100 + runner_loc, position, 50, 50);
 	}
 
 	function stepFrame(){
@@ -53,9 +59,9 @@ function play(){
 
 		// go right and left
 		if (right){
-			runner_loc++;
+			runner_loc += 1.5;
 		}else if (left){
-			runner_loc--;
+			runner_loc -= 1.5;
 		}
 	}
 
@@ -78,7 +84,6 @@ function play(){
 		}else if(e.keyCode == 32){
 			velocity = -8.5;
 		}
-		console.log(e.keyCode);
 	}
 
 	function doKeyUp(e){
