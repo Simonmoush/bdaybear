@@ -4,67 +4,84 @@ function play(){
 	var audio = new Audio('audio_file.mp3');
 	audio.play();
 */
-
 	var c = document.getElementById("game_window");
 	var ctx = c.getContext("2d");
+	ctx.imageSmoothingEnabled = false;
 
-	var floor_height = 90;
+	var floor_height = 85;
 	var accel = .5;
 	var velocity = 0;
-	var position = 0;
+	var bear_y_pos = 0;
 	var time = 0;
-	var walk_counter = 0;
-	var runner_loc = 0;
+	var walk_cycle_counter = 0;
+	var bear_x_pos = 0;
+	var map_pos = 0;
 	var right = false;
 	var left = false;
 
-	var runner = new Image(50, 50);
-	runner.src = "bear1.png";
+	var carrot_size = 20;
+	var carrot_list = [];
+
+	function addCarrot() {
+		var carrot = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
+		carrot_list.push(carrot);
+	}
+
+	var bear = new Image(50, 50);
+	bear.src = "bear1.png";
 
 	var map = new Image(50, 50);
-	map.src = "map.png";
+	map.src = "skymap.png";
+
+	var carrot = new Image(50, 50);
+	carrot.src = "carrot.png";
 
 	var walk_cycle = ["bear1.png", "bear2.png"];
 
-
-
 	function render(){
-		//trail at the end
-		ctx.fillStyle = "rgba(255, 255, 255, .2)";
-		ctx.fillRect(0, 0, c.width, c.height);
-
 		//draw
-		ctx.drawImage(map, time/10, 0, c.width, 240, 0, 0, c.width, c.height);
-		ctx.drawImage(runner, 100 + runner_loc, position, 50, 50);
+		ctx.drawImage(map, map_pos, 0, c.width*2, 600, 0, 0, c.width, c.height);
+		ctx.drawImage(bear, 100 + bear_x_pos, bear_y_pos, 45, 50);
+		
+		for (var i = 0; i < carrot_list.length; i++){
+			crt = carrot_list[i];
+			ctx.drawImage(carrot, crt.x_pos, crt.y_pos, 0.7*carrot_size, carrot_size);
+		}
 	}
 
 	function stepFrame(){
-		time += 20;
+		time += 1;
+
+		//move all items
+		map_pos = (time*4)%2000;
+
+		for (var i = 0; i < carrot_list.length; i++){
+			crt = carrot_list[i];
+			crt.x_pos -= 4;
+		}
 
 		// do jump physics
 		velocity += accel;
-		position += velocity;
+		bear_y_pos += velocity;
 
-		if (position >= floor_height){
+		if (bear_y_pos >= floor_height){
 			velocity = 0;
-			position = floor_height;
+			bear_y_pos = floor_height;
 		}
 
-
 		// only run when on the ground
-		if(floor_height == position){
-			runner.src = walk_cycle[Math.floor(walk_counter)%2];
-			walk_counter += .15;
+		if(floor_height == bear_y_pos){
+			bear.src = walk_cycle[Math.floor(walk_cycle_counter)%2];
+			walk_cycle_counter += .15;
 		}
 
 		// go right and left
 		if (right){
-			runner_loc += 1.5;
+			bear_x_pos += 1.5;
 		}else if (left){
-			runner_loc -= 1.5;
+			bear_x_pos -= 1.5;
 		}
 	}
-
 
 	function update(){
 		stepFrame();
@@ -98,7 +115,6 @@ function play(){
 	
 	window.addEventListener("keydown", doKeyDown, true);
 	window.addEventListener("keyup", doKeyUp, true);
-
 	window.requestAnimationFrame(update);
 }
 
