@@ -18,12 +18,18 @@ function play(){
 	var map_pos = 0;
 	var right = false;
 	var left = false;
+	var speed = 3;
+	var last_carrot = Date.now();
+	var carrot_frequency = 1000;
+	var wobble = .5;
+	var last_wobble = Date.now();
 
 	var carrot_size = 20;
 	var carrot_list = [];
 
 	function addCarrot() {
 		var carrot = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
+		carrot.y_pos = Math.random()*(c.height - 80);
 		carrot_list.push(carrot);
 	}
 
@@ -45,19 +51,35 @@ function play(){
 		
 		for (var i = 0; i < carrot_list.length; i++){
 			crt = carrot_list[i];
-			ctx.drawImage(carrot, crt.x_pos, crt.y_pos, 0.7*carrot_size, carrot_size);
+			ctx.drawImage(carrot, crt.x_pos, crt.y_pos+wobble, 0.7*carrot_size, carrot_size);
 		}
 	}
 
 	function stepFrame(){
-		time += 1;
+		var now = Date.now();
+		time += speed;
+		speed += .001;
+
+		if (now - last_wobble > (40)){
+			wobble *= -1;
+			last_wobble = Date.now();
+		}
+
+		if (now - last_carrot > (Math.random()*5000) + 600){
+			addCarrot();
+			last_carrot = Date.now();
+		}
 
 		//move all items
-		map_pos = (time*4)%2000;
+		map_pos = (time*2)%2000;
 
 		for (var i = 0; i < carrot_list.length; i++){
 			crt = carrot_list[i];
-			crt.x_pos -= 4;
+			crt.x_pos -= speed;
+
+			if (crt.x_pos <= -20) {
+				carrot_list.splice(i, 1);
+			}
 		}
 
 		// do jump physics
