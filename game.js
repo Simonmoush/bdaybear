@@ -122,10 +122,10 @@ function play(){
 		ctx.fillStyle = "white";
 		ctx.font = "30px game";
 		ctx.textAlign = "center"
-		ctx.fillText("Elina Bear", c.width/2, c.height/3);
+		ctx.fillText("Elina    Bear", c.width/2, c.height/3);
 		if (time % blink_time > blink_time/2){
 			ctx.font = "20px game";
-			ctx.fillText("press enter", c.width/2, c.height/2);
+			ctx.fillText("press    enter", c.width/2, c.height/2);
 			ctx.textAlign = "left";
 		}
 	}
@@ -154,10 +154,10 @@ function play(){
 			ctx.font = "30px game";
 			ctx.textAlign = "center"
 			ctx.fillText("Paused", c.width/2, c.height/2);
-			ctx.textAlign = "left"
 			
 		}
 		
+		ctx.textAlign = "left"
 		ctx.font = "15px game";
 		if(paused){
 			ctx.fillStyle = "white";
