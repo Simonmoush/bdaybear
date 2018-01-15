@@ -44,7 +44,7 @@ function getLeaderboard() {
 // Submit current user's current score, and update leaderboard
 function submitScore(score) {
     console.log("You want to submit score", score);
-    var user = $("#name").val();
+    var user = $("#name").val().trim();
     console.log("Your username is", user);
     if (user && score) {
     	submit(user, score);
