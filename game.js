@@ -9,8 +9,19 @@ function play(){
 	ctx.imageSmoothingEnabled = false;
 	ctx.font = "15px game";
 
-	var bear = new Image();
-	bear.src = "bear1.png";
+	var bear1 = new Image();
+	bear1.src = "bear1.png";
+
+	var bear2 = new Image();
+	bear2.src = "bear2.png";
+	
+	var bear_crouch = new Image();
+	bear_crouch.src = "crouch.png";
+
+	var bear_celeb = new Image();
+	bear_celeb.src = "bang.png";
+
+	var bear = bear1;
 
 	var map = new Image();
 	map.src = "skymap.png";
@@ -18,7 +29,7 @@ function play(){
 	var carrot = new Image();
 	carrot.src = "carrot3.png";
 
-	var walk_cycle = ["bear1.png", "bear2.png"];
+	var walk_cycle = [bear1, bear2];
 
 	var paused = false;
 	var pause_color = "rgba(20, 20, 20, .7)";
@@ -160,7 +171,7 @@ function play(){
 		if(crouch){
 			bear_y_pos += 15;
 		}else if(celeb){
-			bear_y_pos -= 10;
+			bear_y_pos -= 8;
 		}
 		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
 		if(celeb){
@@ -169,7 +180,7 @@ function play(){
 		if(crouch){
 			bear_y_pos -= 15;
 		}else if(celeb){
-			bear_y_pos += 10;
+			bear_y_pos += 8;
 		}
 		
 		for (var i = 0; i < carrot_list.length; i++){
@@ -286,11 +297,11 @@ function play(){
 		// only run when on the ground
 		if(floor_height == bear_y_pos){
 			if (celeb){
-				bear.src = "bang.png";
+				bear = bear_celeb;
 			}else if(crouch){
-				bear.src = "crouch.png";
+				bear = bear_crouch;
 			}else{
-				bear.src = walk_cycle[Math.floor(walk_cycle_counter)%2];
+				bear = walk_cycle[Math.floor(walk_cycle_counter)%2];
 				walk_cycle_counter += .15;
 			}
 		}
