@@ -7,6 +7,7 @@ function play(){
 	var c = document.getElementById("game_window");
 	var ctx = c.getContext("2d");
 	ctx.imageSmoothingEnabled = false;
+	ctx.font = "15px game";
 
 	var paused = false;
 	var pause_color = "rgba(20, 20, 20, .7)";
@@ -26,9 +27,14 @@ function play(){
 	var left = false;
 	var speed = 3;
 	var last_carrot = Date.now();
-	var carrot_frequency = 1000;
+	var carrot_frequency = (Math.random()*3000) + 500;
 	var wobble = .5;
 	var last_wobble = Date.now();
+
+	var fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .3)";
+	var last_fire = Date.now();
+	var fire_frequency = 500;
+	var min_fire_frequency = 100;
 
 	var max_jumps = 2;
 	var jumps = 0;
@@ -57,8 +63,14 @@ function play(){
 
 
 
-		//draw
+		//DRAW
+		//map
 		ctx.drawImage(map, map_pos, 0, c.width*2, 600, 0, 0, c.width, c.height);
+		if(carrot_count >= 60){
+			ctx.fillStyle = fire_color;
+			ctx.fillRect(0, 0, c.width, c.height);
+		}
+		//bear
 		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
 		
 		for (var i = 0; i < carrot_list.length; i++){
@@ -71,10 +83,14 @@ function play(){
 			ctx.fillStyle = pause_color;
 			ctx.fillRect(0, 0, c.width, c.height);
 			ctx.fillStyle = "white";
+			ctx.font = "30px game";
+			ctx.textAlign = "center"
 			ctx.fillText("Paused", c.width/2, c.height/2);
+			ctx.textAlign = "left"
 			
 		}
 		
+		ctx.font = "15px game";
 		if(paused){
 			ctx.fillStyle = "white";
 		} else {
@@ -93,9 +109,14 @@ function play(){
 			last_wobble = Date.now();
 		}
 
-		if (now - last_carrot > (Math.random()*5000) + 600){
+		if (now - last_carrot > carrot_frequency){
 			addCarrot();
 			last_carrot = Date.now();
+		}
+
+		if (now - last_fire > fire_frequency){
+			fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .2)";
+			last_fire = Date.now();
 		}
 
 		map_pos = (time*2)%2000;
@@ -112,6 +133,9 @@ function play(){
 				if (crt.y_pos <= bear_y_pos + bear.height && crt.y_pos > bear_y_pos - carrot.height){ // vertical collision
 					carrot_list.splice(i, 1);
 					carrot_count += 1;
+					if(carrot_count % 10 == 0){
+						fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
+					}
 					speed += .1;
 				}
 			}
@@ -171,7 +195,7 @@ function play(){
 			pause_color = "rgba(" + Math.random() * 35 + ", " + Math.random() * 35 + ", " + Math.random() * 35 + ", .7)";
 		}else if(e.keyCode == 32){
 			if(jumps < max_jumps){
-				velocity = -8.5;
+				velocity = -7;
 				jumps += 1;
 			}
 
