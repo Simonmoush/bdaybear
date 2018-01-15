@@ -22,6 +22,11 @@ function play(){
 
 	var paused = false;
 	var pause_color = "rgba(20, 20, 20, .7)";
+	$(document).ready(function() {
+	    $("#name").focus(function() {
+	    	paused = true;
+	    });
+	});
 
 	var start = true;
 	var blink_time = 150;
