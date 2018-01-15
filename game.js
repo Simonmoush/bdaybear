@@ -68,7 +68,7 @@ function play(){
 
 	var fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .3)";
 	var last_fire = Date.now();
-	var fire_frequency = 500;
+	var fire_frequency = 800;
 	var min_fire_frequency = 100;
 
 	var max_jumps = 2;
@@ -99,7 +99,7 @@ function play(){
 
 		fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .3)";
 		last_fire = Date.now();
-		fire_frequency = 500;
+		fire_frequency = 800;
 
 		jumps = 0;
 
@@ -139,9 +139,6 @@ function play(){
 		// Background
 		ctx.fillStyle = "rgb(80, 40, 0)";
 		ctx.fillRect(0, 0, c.width, c.height);
-
-		//bear
-		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
 		
 		for (var i = 0; i < carrot_list.length; i++){
 			crt = carrot_list[i];
@@ -152,18 +149,25 @@ function play(){
 		ctx.font = "30px game";
 		ctx.textAlign = "center"
 		ctx.fillText("Elina    Bear", c.width/2, c.height/3);
+		ctx.font = "20px game";
 		if (time % blink_time > blink_time/2){
-			ctx.font = "20px game";
 			ctx.fillText("press    enter", c.width/2, c.height/2);
-			ctx.textAlign = "left";
 		}
+		ctx.font = "10px game";
+		ctx.fillText("space---jump", c.width/2, c.height*.6);
+		ctx.fillText("Right/Left---move", c.width/2, c.height*.6 + 10);
+		ctx.fillText("Down---pick carrot", c.width/2, c.height*.6 + 20);
+		ctx.fillText("p---pause", c.width/2, c.height*.6 + 30);
+
+		//bear
+		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
 	}
 
 
 	function render(){
 		//map
 		ctx.drawImage(map, map_pos, 0, c.width*2, 600, 0, 0, c.width, c.height);
-		if(carrot_count >= 60){
+		if(carrot_count >= 50){
 			ctx.fillStyle = fire_color;
 			ctx.fillRect(0, 0, c.width, c.height);
 		}
@@ -269,8 +273,8 @@ function play(){
 					if(collect){
 						carrot_list.splice(i, 1);
 						carrot_count += 1;
-						if(carrot_count % 10 == 0){
-							fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
+						if(carrot_count % 5 == 0){
+							fire_frequency = Math.max(min_fire_frequency, fire_frequency*.6);
 						}
 						speed += .1;
 					}
