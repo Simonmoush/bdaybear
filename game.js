@@ -205,6 +205,7 @@ function play(){
 				if (crt.y_pos <= bear_y_pos + bear.height && crt.y_pos > bear_y_pos - carrot.height){ // vertical collision
 					carrot_list.splice(i, 1);
 					carrot_count += 1;
+					submitScore(carrot_count);
 					if(carrot_count % 10 == 0){
 						fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
 					}
