@@ -22,6 +22,11 @@ function play(){
 
 	var paused = false;
 	var pause_color = "rgba(20, 20, 20, .7)";
+	$(document).ready(function() {
+	    $("#name").focus(function() {
+	    	paused = true;
+	    });
+	});
 
 	var start = true;
 	var blink_time = 150;
@@ -205,6 +210,7 @@ function play(){
 				if (crt.y_pos <= bear_y_pos + bear.height && crt.y_pos > bear_y_pos - carrot.height){ // vertical collision
 					carrot_list.splice(i, 1);
 					carrot_count += 1;
+					submitScore(carrot_count);
 					if(carrot_count % 10 == 0){
 						fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
 					}
@@ -271,6 +277,9 @@ function play(){
 	}
 
 	function doKeyDown(e){
+	    if ($("#name").is(":focus")) {
+	    	return;
+	    }
 		if (e.keyCode == 39){
 			//39 is right
 			if(!start){
@@ -303,6 +312,9 @@ function play(){
 	}
 
 	function doKeyUp(e){
+	    if ($("#name").is(":focus")) {
+	    	return;
+	    }
 		if (e.keyCode == 39){
 			//39 is right
 			if(!start){
