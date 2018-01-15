@@ -277,6 +277,9 @@ function play(){
 	}
 
 	function doKeyDown(e){
+	    if ($("#name").is(":focus")) {
+	    	return;
+	    }
 		if (e.keyCode == 39){
 			//39 is right
 			if(!start){
@@ -309,6 +312,9 @@ function play(){
 	}
 
 	function doKeyUp(e){
+	    if ($("#name").is(":focus")) {
+	    	return;
+	    }
 		if (e.keyCode == 39){
 			//39 is right
 			if(!start){

@@ -1,4 +1,8 @@
 $(document).ready(function() {
+    var savedUsername = window.localStorage.getItem("username");
+    if (savedUsername) {
+    	$("#name").val(savedUsername);
+    }
     updateLeaderboard();
 });
 
@@ -6,7 +10,6 @@ $(document).ready(function() {
 function updateLeaderboard() {
     getLeaderboard()
     .then(scores => {
-	console.log("Leaderboard", scores);
 	table = $("#leaderboard");
 	table.empty();
 	$.each(scores, function(rowIndex, r) {
@@ -43,10 +46,9 @@ function getLeaderboard() {
 
 // Submit current user's current score, and update leaderboard
 function submitScore(score) {
-    console.log("You want to submit score", score);
     var user = $("#name").val().trim();
-    console.log("Your username is", user);
     if (user && score) {
+    	window.localStorage.setItem("username", user);
     	submit(user, score);
     }
     updateLeaderboard();
@@ -54,10 +56,9 @@ function submitScore(score) {
 
 // Submit a score for the user, score pair
 function submit(user, score) {
-    console.log("Will submit", user, score);
     fetch(new Request("https://jesskenney.com/leaderboard/post", {
 	method: "POST",
 	body: JSON.stringify({user, score})}))
-    .then(response => response.json())
-    .then(json => console.log(json));
+    //.then(response => response.json())
+    //.then(json => console.log(json));
 }
