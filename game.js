@@ -28,6 +28,16 @@ function play(){
 
 	var floor_height = 85;
 
+	var dirt_level = 115;
+
+	var crouch = false;
+	var start_crouch = Date.now();
+	var crouch_time = 300;
+
+	var celeb = false;
+	var start_celeb = Date.now();
+	var celeb_time = 300;
+
 	// jump physics
 	var accel = .5;
 	var velocity = 0;
@@ -95,7 +105,15 @@ function play(){
 
 	function addCarrot() {
 		var crt = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
-		crt.y_pos = Math.random()*(c.height - 100);
+		if (!start){
+			crt.burried = Math.random() > .5;
+		}
+		if (crt.burried){
+			crt.y_pos = dirt_level;
+		}else{
+			crt.y_pos = Math.random()*(c.height - 100);
+		}
+
 		if (start) {
 			if(Math.random() > .5){
 				crt.x_pos = Math.random()*(c.width/5) - carrot.width;
@@ -139,7 +157,20 @@ function play(){
 			ctx.fillRect(0, 0, c.width, c.height);
 		}
 		//bear
+		if(crouch){
+			bear_y_pos += 15;
+		}else if(celeb){
+			bear_y_pos -= 10;
+		}
 		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
+		if(celeb){
+			ctx.drawImage(carrot, bear_x_pos+7, bear_y_pos+30, carrot.width*.8, carrot.height*.8);
+		}
+		if(crouch){
+			bear_y_pos -= 15;
+		}else if(celeb){
+			bear_y_pos += 10;
+		}
 		
 		for (var i = 0; i < carrot_list.length; i++){
 			crt = carrot_list[i];
@@ -177,6 +208,15 @@ function play(){
 			last_wobble = Date.now();
 		}
 
+		if (now - start_crouch > crouch_time){
+			crouch = false;
+		}
+
+		if (now - start_celeb > celeb_time){
+			celeb = false;
+		}
+
+
 		if(!start){
 			if (now - last_carrot > (Math.random()*8000) + 1000){
 				addCarrot();
@@ -203,12 +243,26 @@ function play(){
 			// collisions
 			if (crt.x_pos <= bear_x_pos + bear.width && crt.x_pos > bear_x_pos - carrot.width){ // horizontal overlap
 				if (crt.y_pos <= bear_y_pos + bear.height && crt.y_pos > bear_y_pos - carrot.height){ // vertical collision
-					carrot_list.splice(i, 1);
-					carrot_count += 1;
-					if(carrot_count % 10 == 0){
-						fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
+					var collect = true;
+					if (crt.burried){
+						collect = false;
+						if (crouch){
+							collect = true;
+							crouch = false;
+							celeb = true;
+							start_celeb = Date.now();
+						}
+					}else{
+						collect = true;
 					}
-					speed += .1;
+					if(collect){
+						carrot_list.splice(i, 1);
+						carrot_count += 1;
+						if(carrot_count % 10 == 0){
+							fire_frequency = Math.max(min_fire_frequency, fire_frequency*.5);
+						}
+						speed += .1;
+					}
 				}
 			}
 
@@ -231,8 +285,14 @@ function play(){
 
 		// only run when on the ground
 		if(floor_height == bear_y_pos){
-			bear.src = walk_cycle[Math.floor(walk_cycle_counter)%2];
-			walk_cycle_counter += .15;
+			if (celeb){
+				bear.src = "bang.png";
+			}else if(crouch){
+				bear.src = "crouch.png";
+			}else{
+				bear.src = walk_cycle[Math.floor(walk_cycle_counter)%2];
+				walk_cycle_counter += .15;
+			}
 		}
 
 		if(start){
@@ -271,6 +331,7 @@ function play(){
 	}
 
 	function doKeyDown(e){
+		//console.log(e.keyCode);
 		if (e.keyCode == 39){
 			//39 is right
 			if(!start){
@@ -282,6 +343,12 @@ function play(){
 			if(!start){
 				left = true;
 				right = false;
+			}
+		}else if (e.keyCode == 40){
+			//40 is down
+			if(!start && bear_y_pos == floor_height && !paused){
+				crouch = true;
+				start_crouch = Date.now();
 			}
 		}else if (e.keyCode == 80){
 			// pause
@@ -313,6 +380,9 @@ function play(){
 			if(!start){
 				left = false;
 			}
+		}else if (e.keyCode == 40){
+			//40 is down
+			crouch = false;
 		}
 	}
 	
