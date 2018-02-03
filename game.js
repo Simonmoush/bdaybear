@@ -1,3 +1,9 @@
+function Asset(type, name, src, x_anchor, y_anchor){
+	this.type = type;
+	this.name = name;
+	this.images = [];
+	this.frame = 0;
+	
 function play(){
 	//setup
 /*
