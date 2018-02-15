@@ -1,20 +1,125 @@
-function Asset(type, name, src, x_anchor, y_anchor){
-	this.type = type;
-	this.name = name;
-	this.images = [];
-	this.frame = 0;
-	
-function play(){
-	//setup
 /*
 	var audio = new Audio('audio_file.mp3');
 	audio.play();
 */
+
+
+
+
+	
+function play(){
+	//setup canvas and context
 	var c = document.getElementById("game_window");
 	var ctx = c.getContext("2d");
-	ctx.imageSmoothingEnabled = false;
-	ctx.font = "15px game";
+	ctx.imageSmoothingEnabled = false; // turn off image smoothing to look more pixel/retro
+	ctx.font = "15px game"; // font defined in the HTML head 
 
+
+	// ==============
+	// Data Structures
+	// ==============
+	
+	// sprite constructor
+	// a sprite is a thing that appears on screen
+	// dx and dy are the coordinates of the anchor/placement point
+	// src is the image file location
+	// draw method draws the sprite placing it using it's anchor point
+	function Sprite(src, dx, dy){
+		this.img = new Image();
+		this.img.src = src;
+		this.dx = dx;
+		this.dy = dy;
+
+		this.draw = function(x, y){
+			ctx.drawImage(this.img, x-this.dx, y-this.dy, this.img.width, this.img.height);
+		}
+	}
+	
+	// sprite_cycle object constructor
+	// a sprite cycle is sprite that cycles through a number of poses
+	// sprites is an array of sprite objects, frequency is the framerate in Hz
+	function Sprite_cycle(sprites, frequency){
+		this.sprites = sprites;
+		this.frequency = frequency; // Hz
+		this.current_frame = 0;
+		this.next_frame = function(){
+			this.frame = (this.frame+1)%this.sprites.length;
+		}
+		if(this.sprites.length > 1){
+			this.timer = window.setInterval(this.next_frame, 1000/this.frequency);
+		}
+		this.current_sprite = function(){ return sprites[frame]; }
+
+		this.draw = function(x, y){
+			this.current_sprite().draw(x, y);
+		}
+	}
+
+	// element constructor
+	// an element is a container for sprites and sprite_cycles that are for the same element
+	// for example the character has many poses, and a walk cycle. all those images are held here
+	// cycle is a sprite cycle object
+	// poses is an object holding poses (sprite objects) indexed by the name of the pose
+	// do_pose takes a string (name of pose) and a duration (in seconds) for which to hold that pose
+	// set_pose takes a string (name of pose) and sets that pose indefinitely
+	function Element(type, cycle, poses){
+		this.type = type;
+		this.cycle = cycle;
+		this.poses = poses;
+		this.posing = false;
+		this.current_pose = "";
+		this.pose_timeout = null;
+
+		this.stop_posing(){
+			this.posing = false;
+		}
+		
+		this.do_pose = function(pose, duration){
+			this.posing = true;
+			current_pose = pose;
+			this.pose_timeout = window.setTimeout(stop_posing, duration*1000);
+
+		}
+
+		this.set_pose = function(pose){
+			this.posing = true;
+			current_pose = pose;
+			window.clearTimeout(this.pose_timeout);
+		}
+		
+		this.draw = function(x, y){
+			if (posing) {
+				if (poses && Object.keys(poses).length > 0){
+					if(poses[current_pose]){
+						poses[current_pose].draw(x, y);
+					}else{
+						console.log("pose \"" + current_pose "\" not found in poses list");
+					}
+				}else{
+					console.log("no poses to draw");
+				}
+			}else{
+				if (cycle){
+					cycle.draw(x, y);
+				}else{
+					console.log("no cycle to draw");
+				}
+			}
+		}
+	}
+
+
+
+	
+
+
+	// New Data Structures
+	
+	var bear = new Sprite_cycle[new Sprite("bear1.png", 3, 47),
+								new Sprite("bear2.png", 1, 50)];
+
+	
+	// Old Data Structures
 	var bear1 = new Image();
 	bear1.src = "bear1.png";
 
