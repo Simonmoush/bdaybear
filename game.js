@@ -2,10 +2,6 @@
 	var audio = new Audio('audio_file.mp3');
 	audio.play();
 */
-
-
-
-
 	
 function play(){
 	//setup canvas and context
@@ -42,12 +38,22 @@ function play(){
 		this.sprites = sprites;
 		this.frequency = frequency; // Hz
 		this.current_frame = 0;
+		this.timer = null;
 		this.next_frame = function(){
 			this.frame = (this.frame+1)%this.sprites.length;
 		}
-		if(this.sprites.length > 1){
-			this.timer = window.setInterval(this.next_frame, 1000/this.frequency);
+
+		this.start = function(){
+			window.clearInterval(this.timer);
+			if(this.sprites.length > 1){
+				this.timer = window.setInterval(this.next_frame, 1000/this.frequency);
+			}
 		}
+
+		this.stop = function(){
+			window.clearInterval(this.timer);
+		}
+
 		this.current_sprite = function(){ return sprites[frame]; }
 
 		this.draw = function(x, y){
@@ -72,10 +78,12 @@ function play(){
 
 		this.stop_posing(){
 			this.posing = false;
+			this.cycle.start();
 		}
 		
 		this.do_pose = function(pose, duration){
 			this.posing = true;
+			this.cycle.stop();
 			current_pose = pose;
 			this.pose_timeout = window.setTimeout(stop_posing, duration*1000);
 
@@ -83,7 +91,14 @@ function play(){
 
 		this.set_pose = function(pose){
 			this.posing = true;
+			this.cycle.stop();
 			current_pose = pose;
+			window.clearTimeout(this.pose_timeout);
+		}
+		
+		this.set_cycle = function(){
+			this.posing = false;
+			this.cycle.start();
 			window.clearTimeout(this.pose_timeout);
 		}
 		
@@ -109,43 +124,52 @@ function play(){
 	}
 
 
-
+	// =============================
+	// Load Data into Data Structures
+	// =============================
 	
 
-
-	// New Data Structures
+	// BEAR
+	// bear walk cycle sprites
+	var bear1 = new Sprite("bear1.png", 3, 47);
+	var bear2 = new Sprite("bear2.png", 1, 50);
 	
-	var bear = new Sprite_cycle[new Sprite("bear1.png", 3, 47),
-								new Sprite("bear2.png", 1, 50)];
+	// put bear walk cycle sprites in a sprite cycle
+	var bear_cycle = new Sprite_cycle([bear1, bear2], bear_walk_frequency_todo);
 
-	
-	// Old Data Structures
-	var bear1 = new Image();
-	bear1.src = "bear1.png";
+	// bear poses sprites
+	var bear_crouch = new Sprite("crouch.png", todo, todo);
+	var bear_celeb = new Sprite("bang.png", todo, todo);
 
-	var bear2 = new Image();
-	bear2.src = "bear2.png";
-	
-	var bear_crouch = new Image();
-	bear_crouch.src = "crouch.png";
+	// put the poses in an object
+	var bear_poses = {
+		crouch: bear_crouch,
+		celeb: bear_celeb
+	};
 
-	var bear_celeb = new Image();
-	bear_celeb.src = "bang.png";
+	// compile all bear stuff into bear element
+	var bear = new Element("player", bear_cycle, bear_poses);
 
-	var bear = bear1;
+	// CARROT
+	// carrot cycle sprites
+	var carrot1 = new Sprite("carrot3.png", todo, todo);
+	var carrot2 = new Sprite("carrot3.png", todo, todo - carrot_wobble_todo);
 
-	var map = new Image();
-	map.src = "skymap.png";
+	// put the carrot cycle into a sprite cycle
+	var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency_todo);
 
-	var carrot = new Image();
-	carrot.src = "carrot3.png";
 
-	var walk_cycle = [bear1, bear2];
+	// GAME WORLD
+	var w = {};
 
-	var paused = false;
-	var pause_color = "rgba(20, 20, 20, .7)";
+	w.map = new Image();
+	w.map.src = "skymap.png";
 
-	var start = true;
+	w.paused = false;
+	w.pause_color = "rgba(20, 20, 20, .7)";
+
+	w.start = true;
+	//TODO
 	var blink_time = 150;
 
 	var floor_height = 85;
