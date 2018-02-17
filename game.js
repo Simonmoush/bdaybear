@@ -10,7 +10,6 @@ function play(){
 	ctx.imageSmoothingEnabled = false; // turn off image smoothing to look more pixel/retro
 	ctx.font = "15px game"; // font defined in the HTML head 
 
-
 	// ==============
 	// Data Structures
 	// ==============
@@ -68,12 +67,21 @@ function play(){
 	// poses is an object holding poses (sprite objects) indexed by the name of the pose
 	// do_pose takes a string (name of pose) and a duration (in seconds) for which to hold that pose
 	// set_pose takes a string (name of pose) and sets that pose indefinitely
+	// after creating the object you must call set pose or set cycle
 	function Element(type, cycle, poses){
-		this.type = type;
+		this.tag = tag;
+		this.x = 0;
+		this.y = 0;
 		this.cycle = cycle;
 		this.poses = poses;
 		this.posing = false;
-		this.current_pose = "";
+
+		if (Object.keys(this.poses).length > 0){
+			this.current_pose = this.poses[Object.keys(this.poses)[0]];
+		}else{
+			this.current_pose = null;
+		}
+
 		this.pose_timeout = null;
 
 		this.stop_posing(){
@@ -81,18 +89,17 @@ function play(){
 			this.cycle.start();
 		}
 		
-		this.do_pose = function(pose, duration){
+		this.do_pose_for_duration = function(pose, duration){
 			this.posing = true;
 			this.cycle.stop();
-			current_pose = pose;
+			this.current_pose = pose;
 			this.pose_timeout = window.setTimeout(stop_posing, duration*1000);
-
 		}
 
 		this.set_pose = function(pose){
 			this.posing = true;
 			this.cycle.stop();
-			current_pose = pose;
+			this.current_pose = pose;
 			window.clearTimeout(this.pose_timeout);
 		}
 		
@@ -102,20 +109,20 @@ function play(){
 			window.clearTimeout(this.pose_timeout);
 		}
 		
-		this.draw = function(x, y){
-			if (posing) {
-				if (poses && Object.keys(poses).length > 0){
-					if(poses[current_pose]){
-						poses[current_pose].draw(x, y);
+		this.draw = function(){
+			if (this.posing) {
+				if (Object.keys(this.poses).length > 0){
+					if(this.poses[this.current_pose]){
+						this.poses[this.current_pose].draw(this.x, this.y);
 					}else{
-						console.log("pose \"" + current_pose "\" not found in poses list");
+						console.log("pose \"" + this.current_pose "\" not found in poses list");
 					}
 				}else{
 					console.log("no poses to draw");
 				}
 			}else{
-				if (cycle){
-					cycle.draw(x, y);
+				if (this.cycle){
+					this.cycle.draw(this.x, this.y);
 				}else{
 					console.log("no cycle to draw");
 				}
@@ -123,12 +130,62 @@ function play(){
 		}
 	}
 
+	function Game(){
+		// ==================================
+		// Make the Game World
+		// ==================================
+
+		// GAME WORLD
+
+		// map
+		this.map = new Image();
+		this.map.src = "skymap.png";
+		this.floor_level = 115;
+
+		// settings ===========================
+		// game
+		this.speed = 3; // what is this?
+		this.gravity = .5; // used to be accel
+
+		// carrot
+		this.carrot_frequency = 1; // change this to hz where it gets uzed
+		this.carrot_wobble = .5;
+
+		// bear
+		this.bear_crouch_time = .4; // change these to seconds where it gets used
+		this.bear_celeb_time = .3; // change this to seconds where it gets used
+		this.max_jumps = 2;
+
+		// pause and start
+		this.pause_color = "rgba(20, 20, 20, .7)";
+		this.start_blink_frequency = 1; // change this to frequency where it gets used
+
+		// on fire
+		this.fire_color = "rgba(" + Math.round(Math.random() * 255) +
+						  ", " + Math.round(Math.random() * 255) +
+						  ", " + Math.round(Math.random() * 255) + ", .3)";
+		this.max_fire_frequency = .2;
+		// ====================================
+
+		// input
+		this.right_pressed = false;
+		this.left_pressed = false;
+
+		// game state
+		this.time = 0;
+		this.map_pos = 0;
+		this.jumps = 0;
+		this.carrots_on_screen = [];
+		this.carrots_collected = 0;
+		this.paused = false;
+		this.start_screen = true;
+		this.fire_frequency = .5;
+	}
 
 	// =============================
-	// Load Data into Data Structures
+	// Load assets into Data Structures
 	// =============================
 	
-
 	// BEAR
 	// bear walk cycle sprites
 	var bear1 = new Sprite("bear1.png", 3, 47);
@@ -148,7 +205,13 @@ function play(){
 	};
 
 	// compile all bear stuff into bear element
-	var bear = new Element("player", bear_cycle, bear_poses);
+	this.bear = new Element("player", bear_cycle, bear_poses);
+
+	// give bear a velocity!!
+	this.bear.velocity = 0;
+
+	// start the bear in cycle mode
+	this.bear.set_cycle();
 
 	// CARROT
 	// carrot cycle sprites
@@ -158,98 +221,21 @@ function play(){
 	// put the carrot cycle into a sprite cycle
 	var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency_todo);
 
+	// put the carrot cycle into an element
+	this.carrot = new Element("carrot", carrot_cycle, null); // no poses
 
-	// GAME WORLD
-	var w = {};
+	// start the carrot in cycle mode
+	this.carrot.set_cycle();
 
-	w.map = new Image();
-	w.map.src = "skymap.png";
-
-	w.paused = false;
-	w.pause_color = "rgba(20, 20, 20, .7)";
-
-	w.start = true;
-	//TODO
-	var blink_time = 150;
-
-	var floor_height = 85;
-
-	var dirt_level = 115;
-
-	var crouch = false;
-	var start_crouch = Date.now();
-	var crouch_time = 300;
-
-	var celeb = false;
-	var start_celeb = Date.now();
-	var celeb_time = 300;
-
-	// jump physics
-	var accel = .5;
-	var velocity = 0;
-	var bear_y_pos = floor_height;
-
-	var time = 0;
-	var walk_cycle_counter = 0;
-	var bear_x_pos = 50;
-	var map_pos = 0;
-	var right = false;
-	var left = false;
-	var speed = 3;
-	var last_carrot = Date.now();
-	var carrot_frequency = (Math.random()*5000) + 500;
-	var wobble = .5;
-	var last_wobble = Date.now();
-
-	var fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .3)";
-	var last_fire = Date.now();
-	var fire_frequency = 800;
-	var min_fire_frequency = 100;
-
-	var max_jumps = 2;
-	var jumps = 0;
-
-	var carrot_list = [];
-	var carrot_count = 0;
-
-	function reset(){
-		paused = false;
-		pause_color = "rgba(20, 20, 20, .7)";
-
-		bear_y_pos = floor_height;
-
-		time = 0;
-		walk_cycle_counter = 0;
-		if(start){
-			bear_x_pos = -100;
-		}else{
-			bear_x_pos = 50;
-		}
-		map_pos = 0;
-		right = false;
-		left = false;
-		speed = 3;
-		last_carrot = Date.now();
-		last_wobble = Date.now();
-
-		fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .3)";
-		last_fire = Date.now();
-		fire_frequency = 800;
-
-		jumps = 0;
-
-		carrot_list = [];
-		carrot_count = 0;
-		if (start) {
-			var start_carrots = (Math.random() * 5) + 4
-			for( var i = 0; i < start_carrots; i++){
-				addCarrot();
-			}
+	/*
+	if (start) {
+		for( var i = 0; i < (Math.random()*5)+4; i++){
+			addCarrot();
 		}
 	}
-	reset();
+	*/
 
-	function addCarrot() {
+	function addCarrot(g) {
 		var crt = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
 		if (!start){
 			crt.burried = Math.random() > .5;
