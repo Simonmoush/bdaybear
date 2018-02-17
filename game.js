@@ -28,7 +28,7 @@ function play(){
 		this.draw = function(x, y){
 			ctx.drawImage(this.img, x-this.dx, y-this.dy, this.img.width, this.img.height);
 		}
-	}
+	} 
 	
 	// sprite_cycle object constructor
 	// a sprite cycle is sprite that cycles through a number of poses
@@ -149,11 +149,10 @@ function play(){
 
 		// carrot
 		this.carrot_frequency = 1; // change this to hz where it gets uzed
-		this.carrot_wobble = .5;
 
-		// bear
-		this.bear_crouch_time = .4; // change these to seconds where it gets used
-		this.bear_celeb_time = .3; // change this to seconds where it gets used
+		// bear settings
+		this.crouch_time = .4; // change these to seconds where it gets used
+		this.celeb_time = .3; // change this to seconds where it gets used
 		this.max_jumps = 2;
 
 		// pause and start
@@ -180,52 +179,92 @@ function play(){
 		this.paused = false;
 		this.start_screen = true;
 		this.fire_frequency = .5;
+
+
+
+		// ==============
+		// METHODS
+		// ==============
+
+		// adds a carrot to the world
+		this.add_carrot = function() {
+			var crt = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
+			if (!start){
+				crt.burried = Math.random() > .5;
+			}
+			if (crt.burried){
+				crt.y_pos = dirt_level;
+			}else{
+				crt.y_pos = Math.random()*(c.height - 100);
+			}
+
+			if (start) {
+				if(Math.random() > .5){
+					crt.x_pos = Math.random()*(c.width/5) - carrot.width;
+				}else{
+					crt.x_pos = c.width - (Math.random()*(c.width/5) - carrot.width);
+				}
+			}
+			carrot_list.push(crt);
+		}
+
 	}
 
-	// =============================
-	// Load assets into Data Structures
-	// =============================
-	
 	// BEAR
-	// bear walk cycle sprites
-	var bear1 = new Sprite("bear1.png", 3, 47);
-	var bear2 = new Sprite("bear2.png", 1, 50);
-	
-	// put bear walk cycle sprites in a sprite cycle
-	var bear_cycle = new Sprite_cycle([bear1, bear2], bear_walk_frequency_todo);
+	function New_bear(){
+		var bear_walk_frequency = .3;
 
-	// bear poses sprites
-	var bear_crouch = new Sprite("crouch.png", todo, todo);
-	var bear_celeb = new Sprite("bang.png", todo, todo);
+		// bear walk cycle sprites
+		var bear1 = new Sprite("bear1.png", 3, 47);
+		var bear2 = new Sprite("bear2.png", 1, 50);
+		
+		// put bear walk cycle sprites in a sprite cycle
+		var bear_cycle = new Sprite_cycle([bear1, bear2], bear_walk_frequency);
 
-	// put the poses in an object
-	var bear_poses = {
-		crouch: bear_crouch,
-		celeb: bear_celeb
-	};
+		// bear poses sprites
+		var bear_crouch = new Sprite("crouch.png", todo, todo);
+		var bear_celeb = new Sprite("bang.png", todo, todo);
 
-	// compile all bear stuff into bear element
-	this.bear = new Element("player", bear_cycle, bear_poses);
+		// put the poses in an object
+		var bear_poses = {
+			crouch: bear_crouch,
+			celeb: bear_celeb
+		};
 
-	// give bear a velocity!!
-	this.bear.velocity = 0;
+		// compile all bear stuff into bear element
+		var bear = new Element("player", bear_cycle, bear_poses);
 
-	// start the bear in cycle mode
-	this.bear.set_cycle();
+		// give bear a velocity!!
+		bear.velocity = 0;
+
+		// start the bear in cycle mode
+		bear.set_cycle();
+
+		return bear;
+	}
 
 	// CARROT
-	// carrot cycle sprites
-	var carrot1 = new Sprite("carrot3.png", todo, todo);
-	var carrot2 = new Sprite("carrot3.png", todo, todo - carrot_wobble_todo);
+	function New_carrot() {
+		var carrot_wobble = .5;
+		var carrot_wobble_frequency = .5;
 
-	// put the carrot cycle into a sprite cycle
-	var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency_todo);
+		// carrot cycle sprites
+		var carrot1 = new Sprite("carrot3.png", todo, todo);
+		var carrot2 = new Sprite("carrot3.png", todo, todo - carrot_wobble_todo);
 
-	// put the carrot cycle into an element
-	this.carrot = new Element("carrot", carrot_cycle, null); // no poses
+		// put the carrot cycle into a sprite cycle
+		var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency_todo);
 
-	// start the carrot in cycle mode
-	this.carrot.set_cycle();
+		// put the carrot cycle into an element
+		var carrot = new Element("carrot", carrot_cycle, null); // no poses
+
+		carrot.burried = false;
+
+		// start the carrot in cycle mode
+		carrot.set_cycle();
+
+		return carrot;
+	}
 
 	/*
 	if (start) {
@@ -235,26 +274,6 @@ function play(){
 	}
 	*/
 
-	function addCarrot(g) {
-		var crt = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
-		if (!start){
-			crt.burried = Math.random() > .5;
-		}
-		if (crt.burried){
-			crt.y_pos = dirt_level;
-		}else{
-			crt.y_pos = Math.random()*(c.height - 100);
-		}
-
-		if (start) {
-			if(Math.random() > .5){
-				crt.x_pos = Math.random()*(c.width/5) - carrot.width;
-			}else{
-				crt.x_pos = c.width - (Math.random()*(c.width/5) - carrot.width);
-			}
-		}
-		carrot_list.push(crt);
-	}
 
 	function show_start(){
 		// Background
