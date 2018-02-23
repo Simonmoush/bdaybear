@@ -43,7 +43,7 @@ function play(){
 		}
 
 		this.start = function(){
-			window.clearInterval(this.timer);
+			if(this.timer != null) {return};
 			if(this.sprites.length > 1){
 				this.timer = window.setInterval(this.next_frame, 1000/this.frequency);
 			}
@@ -51,6 +51,7 @@ function play(){
 
 		this.stop = function(){
 			window.clearInterval(this.timer);
+			this.timer = null
 		}
 
 		this.current_sprite = function(){ return sprites[frame]; }
@@ -131,12 +132,6 @@ function play(){
 	}
 
 	function Game(){
-		// ==================================
-		// Make the Game World
-		// ==================================
-
-		// GAME WORLD
-
 		// map
 		this.map = new Image();
 		this.map.src = "skymap.png";
@@ -149,6 +144,15 @@ function play(){
 
 		// carrot
 		this.carrot_frequency = 1; // change this to hz where it gets uzed
+		this.carrot_timer = window.setTimeout(add_carrot, carrot_frequency*1000);
+
+		// hat
+		this.hat_frequency = 1; // change this to hz where it gets uzed
+		this.hat_timer = window.setTimeout(add_carrot, carrot_frequency*1000);
+
+		// obstacle
+		this.obstacle_frequency = 1; // change this to hz where it gets uzed
+		this.obstacle_timer = window.setTimeout(add_carrot, carrot_frequency*1000);
 
 		// bear settings
 		this.crouch_time = .4; // change these to seconds where it gets used
@@ -164,6 +168,7 @@ function play(){
 						  ", " + Math.round(Math.random() * 255) +
 						  ", " + Math.round(Math.random() * 255) + ", .3)";
 		this.max_fire_frequency = .2;
+		this.fire_timer = window.setTimeout(add_carrot, carrot_frequency*1000);
 		// ====================================
 
 		// input
@@ -178,6 +183,7 @@ function play(){
 		this.carrots_collected = 0;
 		this.paused = false;
 		this.start_screen = true;
+		this.on_fire = false;
 		this.fire_frequency = .5;
 
 
@@ -188,16 +194,20 @@ function play(){
 
 		// adds a carrot to the world
 		this.add_carrot = function() {
-			var crt = {burried: false, y_pos: 100, x_pos: c.width, creation_pos: map_pos};
-			if (!start){
-				crt.burried = Math.random() > .5;
-			}
-			if (crt.burried){
-				crt.y_pos = dirt_level;
-			}else{
-				crt.y_pos = Math.random()*(c.height - 100);
-			}
+			var crt = New_carrot();
 
+			// position the carrot
+			crt.y = floor_level;
+			crt.x = c.width;
+
+			this.carrots_on_screen.push(crt);
+
+			// put a thing at a random height
+			// crt.y_pos = Math.random()*(c.height - 100);
+
+
+			/*
+			// this puts the things in the start of the game
 			if (start) {
 				if(Math.random() > .5){
 					crt.x_pos = Math.random()*(c.width/5) - carrot.width;
@@ -205,7 +215,7 @@ function play(){
 					crt.x_pos = c.width - (Math.random()*(c.width/5) - carrot.width);
 				}
 			}
-			carrot_list.push(crt);
+			*/
 		}
 
 	}
@@ -250,15 +260,15 @@ function play(){
 
 		// carrot cycle sprites
 		var carrot1 = new Sprite("carrot3.png", todo, todo);
-		var carrot2 = new Sprite("carrot3.png", todo, todo - carrot_wobble_todo);
+		var carrot2 = new Sprite("carrot3.png", todo, todo - carrot_wobble);
 
 		// put the carrot cycle into a sprite cycle
-		var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency_todo);
+		var carrot_cycle = new Sprite_cycle([carrot1, carrot2], carrot_wobble_frequency);
 
 		// put the carrot cycle into an element
 		var carrot = new Element("carrot", carrot_cycle, null); // no poses
 
-		carrot.burried = false;
+		carrot.burried = true;
 
 		// start the carrot in cycle mode
 		carrot.set_cycle();
@@ -266,67 +276,53 @@ function play(){
 		return carrot;
 	}
 
-	/*
-	if (start) {
-		for( var i = 0; i < (Math.random()*5)+4; i++){
-			addCarrot();
-		}
-	}
-	*/
-
-
-	function show_start(){
-		// Background
-		ctx.fillStyle = "rgb(80, 40, 0)";
-		ctx.fillRect(0, 0, c.width, c.height);
-		
-		for (var i = 0; i < carrot_list.length; i++){
-			crt = carrot_list[i];
-			ctx.drawImage(carrot, crt.x_pos, crt.y_pos+wobble, carrot.width, carrot.height);
-		}
-
-		ctx.fillStyle = "white";
-		ctx.font = "30px game";
-		ctx.textAlign = "center"
-		ctx.fillText("Elina    Bear", c.width/2, c.height/3);
-		ctx.font = "20px game";
-		if (time % blink_time > blink_time/2){
-			ctx.fillText("press    enter", c.width/2, c.height/2);
-		}
-		ctx.font = "10px game";
-		ctx.fillText("space---jump", c.width/2, c.height*.6);
-		ctx.fillText("Right/Left---move", c.width/2, c.height*.6 + 10);
-		ctx.fillText("Down---pick carrot", c.width/2, c.height*.6 + 20);
-		ctx.fillText("p---pause", c.width/2, c.height*.6 + 30);
-
-		//bear
-		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
-	}
-
-
 	function render(){
-		//map
-		ctx.drawImage(map, map_pos, 0, c.width*2, 600, 0, 0, c.width, c.height);
-		if(carrot_count >= 50){
-			ctx.fillStyle = fire_color;
+		// background
+
+		if (start) {
+			// Background color
+			ctx.fillStyle = "rgb(80, 40, 0)";
 			ctx.fillRect(0, 0, c.width, c.height);
+
+			// Title
+			ctx.fillStyle = "white";
+			ctx.font = "30px game";
+			ctx.textAlign = "center"
+			ctx.fillText("Elina    Bear", c.width/2, c.height/3);
+
+			// Press Enter
+			ctx.font = "20px game";
+			if (g.blink_on){
+				ctx.fillText("press    enter", c.width/2, c.height/2);
+			}
+
+			// Controls
+			ctx.font = "10px game";
+			ctx.fillText("space---jump", c.width/2, c.height*.6);
+			ctx.fillText("Right/Left---move", c.width/2, c.height*.6 + 10);
+			ctx.fillText("Down---pick carrot", c.width/2, c.height*.6 + 20);
+			ctx.fillText("p---pause", c.width/2, c.height*.6 + 30);
+		} else{
+			// map
+			ctx.drawImage(map, map_pos, 0, c.width*2, 600, 0, 0, c.width, c.height);
+
+			// on fire
+			if(carrot_count >= 50){
+				ctx.fillStyle = fire_color;
+				ctx.fillRect(0, 0, c.width, c.height);
+			}
 		}
-		//bear
-		if(crouch){
-			bear_y_pos += 15;
-		}else if(celeb){
-			bear_y_pos -= 8;
-		}
-		ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
-		if(celeb){
-			ctx.drawImage(carrot, bear_x_pos+7, bear_y_pos+30, carrot.width*.8, carrot.height*.8);
-		}
-		if(crouch){
-			bear_y_pos -= 15;
-		}else if(celeb){
-			bear_y_pos += 8;
-		}
+
+
+		// draw elements
 		
+		//bear
+		// something like bear.draw()
+		//ctx.drawImage(bear, bear_x_pos, bear_y_pos, bear.width, bear.height);
+		
+
+		// carrots
+		// TODO make this an everything list that decides what to do by type
 		for (var i = 0; i < carrot_list.length; i++){
 			crt = carrot_list[i];
 			ctx.drawImage(carrot, crt.x_pos, crt.y_pos+wobble, carrot.width, carrot.height);
@@ -340,49 +336,20 @@ function play(){
 			ctx.font = "30px game";
 			ctx.textAlign = "center"
 			ctx.fillText("Paused", c.width/2, c.height/2);
-			
 		}
 		
+
+		// stats
 		ctx.textAlign = "left"
 		ctx.font = "15px game";
-		if(paused){
-			ctx.fillStyle = "white";
-		} else {
-			ctx.fillStyle = "black";
-		}
+		ctx.fillStyle = paused ? "white" : "black";
+
 		ctx.fillText("x" + carrot_count, 20, 15);
 		ctx.drawImage(carrot, 0, 0, carrot.width, carrot.height, 10, 2, carrot.width/2, carrot.height/2);
 	}
 
 	function stepFrame(){
-		var now = Date.now();
 		time += speed;
-
-		if (now - last_wobble > (40)){
-			wobble *= -1;
-			last_wobble = Date.now();
-		}
-
-		if (now - start_crouch > crouch_time){
-			crouch = false;
-		}
-
-		if (now - start_celeb > celeb_time){
-			celeb = false;
-		}
-
-
-		if(!start){
-			if (now - last_carrot > (Math.random()*8000) + 1000){
-				addCarrot();
-				last_carrot = Date.now();
-			}
-		}
-
-		if (now - last_fire > fire_frequency){
-			fire_color = "rgba(" + Math.random() * 255 + ", " + Math.random() * 255 + ", " + Math.random() * 255 + ", .2)";
-			last_fire = Date.now();
-		}
 
 		map_pos = (time*2)%2000;
 
@@ -427,27 +394,21 @@ function play(){
 			}
 		}
 
+		// do bear jump physics
+		bear.velocity += g.gravity;
+		bear.y += velocity;
 
-		// do jump physics
-		velocity += accel;
-		bear_y_pos += velocity;
-
-		if (bear_y_pos >= floor_height){
-			velocity = 0;
-			bear_y_pos = floor_height;
-			jumps = 0;
+		if (bear.y >= g.floor_level){
+			bear.velocity = 0;
+			bear.y = g.floor_level;
+			g.jumps = 0;
 		}
 
 		// only run when on the ground
-		if(floor_height == bear_y_pos){
-			if (celeb){
-				bear = bear_celeb;
-			}else if(crouch){
-				bear = bear_crouch;
-			}else{
-				bear = walk_cycle[Math.floor(walk_cycle_counter)%2];
-				walk_cycle_counter += .15;
-			}
+		if(bear.y == g.floor_level){
+			bear.cycle.start();
+		}else{
+			bear.cycle.stop();
 		}
 
 		if(start){
@@ -473,16 +434,13 @@ function play(){
 		}
 	}
 
-	function update(){
-		if (!paused){
-			stepFrame();
-		}
+	function main_loop(){
 		if (start){
 			show_start();
-		}else{
-			render();
 		}
-		window.requestAnimationFrame(update);
+		stepFrame();
+		render();
+		window.requestAnimationFrame(main_loop);
 	}
 
 	function doKeyDown(e){
@@ -543,7 +501,7 @@ function play(){
 	
 	window.addEventListener("keydown", doKeyDown, true);
 	window.addEventListener("keyup", doKeyUp, true);
-	window.requestAnimationFrame(update);
+	window.requestAnimationFrame(main_loop);
 }
 
 play();
