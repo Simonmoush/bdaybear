@@ -7,9 +7,9 @@ function elina_game(){
 	ctx.font = "15px game";
 
 	// get keyboard events
+	var keys_pressed = {};
 	window.addEventListener("keydown", doKeyDown, true);
 	window.addEventListener("keyup", doKeyUp, true);
-
 
 	// ==============
 	// Data Structures
@@ -28,7 +28,11 @@ function elina_game(){
 		var dy = dy;
 
 		this.width = img.width;
-		this.height = img/height;
+		this.height = img.height;
+
+		this.set_width = function(w){ img.width = w; }
+		this.set_height = function(h){ img.height = h; }
+
 		this.draw = function(x, y){
 			ctx.drawImage(img, x-dx, y-dy, img.width, img.height);
 		}
@@ -49,18 +53,20 @@ function elina_game(){
 
 		var current_sprite = function(){ return sprites[current_frame]; }
 
-		var next_frame = function(){
+		this.next_frame = function(){
 			current_frame = (current_frame+1)%sprites.length;
 		}
 
 		this.do_cycle = function(){
 			if(timer != null) {return}// don't restart
-			timer = window.setInterval(next_frame, 1000/frequency);
+			timer = window.setInterval(this.next_frame, 1000/frequency);
 		}
 
 		this.pause_cycle = function(){
-			window.clearInterval(timer);
-			timer = null;
+			if(timer){
+				window.clearInterval(timer);
+				timer = null;
+			}
 		}
 
 		this.width = function(){
@@ -94,21 +100,29 @@ function elina_game(){
 		var posing = false;
 		var cycle = cycle;
 		var poses = poses;
-		var current_pose = null;
+		var current_pose = (poses != null) ?  poses[Object.keys(poses)[0]] : null;
 		var pose_timeout = null;
 
+		this.get_current_pose = function(){
+			if (posing) {
+				return current_pose;
+			} else {return false;}
+		}
+
 		this.width = function(){
-			if(posing)[
+			if(posing){
 				return poses[current_pose].width;
 			}else{
 				return cycle.width();
+			}
 		}
 
 		this.height = function(){
-			if(posing)[
+			if(posing){
 				return poses[current_pose].height;
 			}else{
 				return cycle.height();
+			}
 		}
 
 		this.set_cycle_mode = function(){
@@ -121,7 +135,7 @@ function elina_game(){
 
 		this.set_pose_mode = function(pose){
 			posing = true;
-			cycle.stop();
+			cycle.pause_cycle();
 			window.clearTimeout(this.pose_timeout);
 			pose_timeout = null;
 			current_pose = pose;
@@ -129,13 +143,17 @@ function elina_game(){
 
 		this.do_pose_for_duration = function(pose, duration){
 			posing = true;
-			cycle.stop();
+			cycle.pause_cycle();
 			current_pose = pose;
-			pose_timeout = window.setTimeout(resume_cycle, duration*1000);
+			pose_timeout = window.setTimeout(this.resume_cycle, duration*1000);
 		}
 
 		this.pause_cycle = function(){
-			cycle.stop();
+			cycle.pause_cycle();
+		}
+
+		this.unpause_cycle = function(){
+			cycle.do_cycle();
 		}
 
 		this.resume_cycle = function(){
@@ -144,16 +162,15 @@ function elina_game(){
 			cycle.do_cycle();
 		}
 
-		// sets the current pose if there is one
-		
-		this.current_pose = (this.poses != null) ?
-			this.poses[Object.keys(this.poses)[0]] :
-			null;
+		this.step_cycle = function(){
+			cycle.next_frame();
+		}
+
 		
 		this.draw = function(){
 			if (posing) {
-				if(this.poses[current_pose]){
-					this.poses[current_pose].draw(this.x, this.y);
+				if(poses[current_pose]){
+					poses[current_pose].draw(this.x, this.y);
 				}else{
 					console.log("pose \"" + current_pose + "\" not found in poses list");
 				}
@@ -174,8 +191,8 @@ function elina_game(){
 		var carrot_wobble_frequency = 20;
 
 		// carrot cycle sprites
-		var carrot1 = new Sprite("carrot3.png", 1, 29);
-		var carrot2 = new Sprite("carrot3.png", 1, 29 - carrot_wobble);
+		var carrot1 = new Sprite("carrot.png", 1, 29);
+		var carrot2 = new Sprite("carrot.png", 1, 29 - carrot_wobble);
 
 		// put the carrot cycle into a sprite cycle
 		var carrot_cycle = new SpriteCycle([carrot1, carrot2], carrot_wobble_frequency);
@@ -187,6 +204,87 @@ function elina_game(){
 		carrot.set_cycle_mode();
 
 		return carrot;
+	}
+
+	function New_Banana() {
+		var banana_wobble = 2.5;
+		var banana_wobble_frequency = 30;
+
+		// banana cycle sprites
+		var banana1 = new Sprite("banana.png", 0, 15);
+		var banana2 = new Sprite("banana.png", 0, 15 - banana_wobble);
+		var banana3 = new Sprite("banana.png", 0 + banana_wobble, 15 - banana_wobble);
+		var banana4 = new Sprite("banana.png", 0 + banana_wobble, 15);
+
+		// put the banana cycle into a sprite cycle
+		var banana_cycle = new SpriteCycle([banana1, banana2, banana3, banana4], banana_wobble_frequency);
+
+		// put the banana cycle into an element
+		var banana = new Element("banana", banana_cycle, null); // no poses
+
+		// start the carrot in cycle mode
+		banana.set_cycle_mode();
+
+		return banana;
+	}
+
+	// New_Obstacle
+	// this just makes an element with the obstacle sprites and sprite cycle set up. it sets it in cycle mode
+	function New_Obstacle() {
+		var speech_bubble_frequency = 4;
+		var man_scale = 2;
+
+		// cycle sprites
+		var man1 = new Sprite("man1.png", 0, 23*man_scale);
+		var man2 = new Sprite("man2.png", 0, 23*man_scale);
+
+		man1.set_width(man1.width*man_scale);
+		man1.set_height(man1.height*man_scale);
+
+		man2.set_width(man2.width*man_scale);
+		man2.set_height(man2.height*man_scale);
+
+
+		// put the cycle sprites into a sprite cycle
+		var man_cycle = new SpriteCycle([man1, man2], speech_bubble_frequency);
+
+		// put the SpriteCycle into an element
+		var obstacle = new Element("obstacle", man_cycle, null); // no poses
+
+		// start the man in cycle mode
+		obstacle.set_cycle_mode();
+
+		return obstacle;
+	}
+
+	// New_Hat
+	// this just makes an element with the hat sprite
+	function New_Hat() {
+		var hat_change_frequency = 8;
+		var hat_scale = 1;
+		var hat_height = 10;
+
+		// sprites
+		var hat1 = new Sprite("hat1.png", 0, hat_height*hat_scale);
+		var hat2 = new Sprite("hat2.png", 0, hat_height*hat_scale);
+		var hat3 = new Sprite("hat3.png", 0, hat_height*hat_scale);
+		var hat4 = new Sprite("hat4.png", 0, hat_height*hat_scale);
+
+		var hats = [hat1, hat2, hat3, hat4];
+		for (var i = 0; i < 4; i++){
+			hats[i].set_width(hats[i].width*hat_scale);
+			hats[i].set_height(hats[i].height*hat_scale);
+		}
+
+		var hat_cycle = new SpriteCycle(hats, hat_change_frequency);
+
+		// put the Spriteinto an element
+		var hat = new Element("hat", hat_cycle, null); // no poses
+
+		// start the hat in cycle mode
+		hat.set_cycle_mode();
+
+		return hat;
 	}
 
 	// New_Bear
@@ -203,8 +301,8 @@ function elina_game(){
 		var bear_cycle = new SpriteCycle([bear1, bear2], bear_walk_frequency);
 
 		// bear poses sprites
-		var bear_crouch = new Sprite("crouch.png", 0, 34);
-		var bear_celeb = new Sprite("bang.png", 0, 54);
+		var bear_crouch = new Sprite("bear_crouch.png", 0, 34);
+		var bear_celeb = new Sprite("bear_celeb.png", 0, 54);
 
 		// put the poses in an object
 		var bear_poses = {
@@ -215,8 +313,48 @@ function elina_game(){
 		// compile all bear stuff into bear element
 		var bear = new Element("player", bear_cycle, bear_poses);
 
+		// save a backup of the bear poses and cycle
+		bear.b_poses = bear_poses;
+		bear.b_cycle = bear_cycle;
+
+		// minion walk cycle sprites
+		var minion1 = new Sprite("minion1.png", 2, 48);
+		var minion2 = new Sprite("minion2.png", 3, 50);
+		
+		// put minion walk cycle sprites in a sprite cycle
+		var minion_cycle = new SpriteCycle([minion1, minion2], bear_walk_frequency);
+
+		// minion poses sprites
+		var minion_crouch = new Sprite("minion_crouch.png", 0, 34);
+		var minion_celeb = new Sprite("minion_celeb.png", 0, 54);
+
+		// put the poses in an object
+		var minion_poses = {
+			crouch: minion_crouch,
+			celeb: minion_celeb
+		};
+
+		bear.is_minion = false;
+
 		// give bear a velocity!!
 		bear.velocity = 0;
+
+		// - is backwards, + is forwards, 0 is stopped
+		bear.direction = 0;
+
+		// how fast the bear moves
+		bear.speed = 2;
+
+		bear.jumps = 0;
+		bear.max_jumps = 2;
+
+		bear.jump = function(){
+			if(bear.jumps < bear.max_jumps){
+				bear.velocity = -7;
+				bear.step_cycle();
+				bear.jumps++;
+			}
+		}
 
 		// start the bear in cycle mode
 		bear.set_cycle_mode();
@@ -238,21 +376,25 @@ function elina_game(){
 		this.gravity = .5;
 
 		// carrot
-		this.carrot_frequency = 1; //hz
-		this.carrot_timer = window.setTimeout(this.add_carrot, this.carrot_frequency*1000);
+		this.carrot_frequency = 3; //hz
+		this.carrot_timer = window.setInterval(function(){g.add_carrot()}, this.carrot_frequency*1000);
 
 		// hat
-		this.hat_frequency = 5; // hz
-		this.hat_timer = window.setTimeout(this.add_hat, this.hat_frequency*1000);
+		this.hat_frequency = 13; // hz
+		this.hat_timer = window.setInterval(function(){g.add_hat()}, this.hat_frequency*1000);
 
 		// obstacle
-		this.obstacle_frequency = 3; // hz
-		this.obstacle_timer = window.setTimeout(this.add_obstacle, this.obstacle_frequency*1000);
+		this.obstacle_frequency = 5; // hz
+		this.obstacle_timer = window.setInterval(function(){g.add_obstacle()}, this.obstacle_frequency*1000);
+
+		// banana
+		this.banana_frequency = 1;//29; // hz
+		this.banana_timer = window.setInterval(function(){g.add_banana()}, this.banana_frequency*1000);
 
 		// bear settings
 		this.crouch_time = .4; // sec
 		this.celeb_time = .3; // sec
-		this.max_jumps = 2;
+		this.minion_time = 10; // sec
 
 		// pause and start
 		this.start_blink_frequency = 1; // hz
@@ -266,15 +408,10 @@ function elina_game(){
 		this.fire_timer = window.setInterval(this.change_fire, this.fire_frequency*1000);
 		// ====================================
 
-		// input
-		this.right_pressed = false;
-		this.left_pressed = false;
-
 		// game state
 		this.speed = 3;
 		this.time = 0;
 		this.map_pos = 0;
-		this.jumps = 0;
 		this.elements_on_screen = [];
 		this.carrots_collected = 0;
 		this.paused = false;
@@ -292,19 +429,48 @@ function elina_game(){
 		// METHODS
 		// ==============
 
-		// adds a carrot to the world
 		this.add_carrot = function() {
 			var crt = New_Carrot();
 
 			// position the carrot
-			crt.y = this.floor_level;
+			crt.y = this.floor_level + crt.height()*.4;
 			crt.x = c.width;
 
 			this.elements_on_screen.push(crt);
 		}
 
-		// removes a carrot from the world
-		this.remove_carrot = function(index) {
+		this.add_obstacle = function() {
+			var obs = New_Obstacle();
+
+			// position the obstacle
+			obs.y = this.floor_level;
+			obs.x = c.width;
+
+			this.elements_on_screen.push(obs);
+		}
+
+		this.add_hat = function() {
+			var hat = New_Hat();
+
+			// position the hat
+			hat.y = Math.random()*this.floor_level - 10;
+			hat.x = c.width;
+
+			this.elements_on_screen.push(hat);
+		}
+
+		this.add_banana = function() {
+			var ban = New_Banana();
+
+			// position the banana
+			ban.y = Math.random()*this.floor_level - 10;
+			ban.x = c.width;
+
+			this.elements_on_screen.push(ban);
+		}
+
+		// removes an element from the world
+		this.remove_element = function(index) {
 			this.elements_on_screen.splice(index, 1);
 		}
 
@@ -314,12 +480,6 @@ function elina_game(){
 		}
 	}
 	
-	var g = null;
-
-	function setup(){
-		g = new Game();
-		g.add_carrot();
-	}
 
 	function main_loop(){
 		step_frame();
@@ -340,12 +500,58 @@ function elina_game(){
 
 			// check for collisions with player
 			// horizontal overlap
-			// HERE
-			if (elem.x <= g.player.x + g.player.width() && crt.x_pos > bear_x_pos - carrot.width){
+			if (elem.x <= g.player.x + g.player.width() && elem.x > g.player.x - elem.width()){
 				// vertical overlap
-				if (crt.y_pos <= bear_y_pos + bear.height && crt.y_pos > bear_y_pos - carrot.height){
-
+				if (elem.y <= g.player.y + g.player.height() && elem.y > g.player.y - elem.height()){
+					// collision
+					if(elem.type == "carrot"){
+						// collect if crouched
+						if (g.player.get_current_pose() == "crouch"){
+							g.remove_element(e);
+							g.carrots_collected++;
+							g.speed += .1;
+							g.player.do_pose_for_duration("celeb", .3);
+						}
+					}else if(elem.type == "obstacle"){
+						// die
+					}else if(elem.type == "hat"){
+						// wear hat
+					}else if(elem.type == "banana"){
+						// become minion
+					}
+				}
+			}
+			// remove all elements that go out of bounds
+			if (elem.x < 0-elem.width()){
+				g.remove_element(e);
+			}
 		}
+
+		// move the player
+		g.player.direction = 0;
+
+		// right and left
+		if (keys_pressed[39]) { g.player.direction += g.player.speed*.8; }
+		if (keys_pressed[37]) { g.player.direction -= g.player.speed*1.5; }
+		g.player.x += g.player.direction;
+		// keep the player in bounds
+		g.player.x = Math.max(Math.min(g.player.x, c.width - g.player.width()), 0);
+
+
+		// do jump physics
+		g.player.velocity += g.gravity;
+		g.player.y += g.player.velocity;
+
+		if (g.player.y >= g.floor_level){
+			g.player.velocity = 0;
+			g.player.y = g.floor_level;
+			g.player.jumps = 0;
+		}
+
+		// only run when on the ground
+		if(g.player.jumps != 0){ g.player.pause_cycle(); }
+		else{ g.player.unpause_cycle(); }
+
 
 	}
 
@@ -361,37 +567,30 @@ function elina_game(){
 		//player
 		g.player.draw();
 	}
-	
-	setup();
-	main_loop();
 
 	function doKeyDown(e){
+		keys_pressed[e.keyCode] = true;
+
 		//console.log(e.keyCode);
-		if (e.keyCode == 39){
-			//39 is right
-		}else if (e.keyCode == 37){
-			//37 is left
-		}else if (e.keyCode == 40){
+		if (e.keyCode == 40){
 			//40 is down
+			g.player.do_pose_for_duration("crouch", .3);
 		}else if (e.keyCode == 80){
 			// p for pause
 		}else if (e.keyCode == 13){
 			// enter for start/Restart game
 		}else if(e.keyCode == 32 || e.keyCode == 38){
 			// space or up for jump
+			g.player.jump();
 		}
 	}
 
 	function doKeyUp(e){
-		if (e.keyCode == 39){
-			//39 is right
-		}else if (e.keyCode == 37){
-			//37 is left
-		}else if (e.keyCode == 40){
-			//40 is down
-		}
+		keys_pressed[e.keyCode] = false;
 	}
-}
 
+	var g = new Game();
+	main_loop();
+}
 
 elina_game();
