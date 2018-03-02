@@ -24,14 +24,14 @@ function elina_game(){
 		var img = new Image();
 		img.src = src;
 
-		var dx = dx;
-		var dy = dy;
+		var dx = dx == null ? img.width/2 : dx;
+		var dy = dy == null ? img.height/2 : dy;
 
 		this.width = img.width;
 		this.height = img.height;
 
-		this.set_width = function(w){ img.width = w; }
-		this.set_height = function(h){ img.height = h; }
+		this.set_width = function(w){ img.width = w; this.width = w; }
+		this.set_height = function(h){ img.height = h; this.height = h; }
 
 		this.draw = function(x, y){
 			ctx.drawImage(img, x-dx, y-dy, img.width, img.height);
@@ -189,6 +189,9 @@ function elina_game(){
 					console.log("no cycle to draw");
 				}
 			}
+			if(this.type == "player" && this.wearing_hat){
+				this.hat.draw();
+			}
 		}
 	}
 
@@ -300,6 +303,7 @@ function elina_game(){
 	// adds velocity to the bear and sets it in cycle mode
 	function New_Bear(){
 		var bear_walk_frequency = 7.5;
+		var death_walk_frequency = 12;
 
 		// bear walk cycle sprites
 		var bear1 = new Sprite("bear1.png", 2, 48);
@@ -318,20 +322,48 @@ function elina_game(){
 			celeb: bear_celeb
 		};
 
+
+
 		// compile all bear stuff into bear element
 		var bear = new Element("player", bear_cycle, bear_poses);
+
+		//death cycles
+		var b_deaths = [new Sprite("bear_death_0.png", null, null),
+						new Sprite("bear_death_1.png", null, null),
+						new Sprite("bear_death_2.png", null, null),
+						new Sprite("bear_death_3.png", null, null),
+						new Sprite("bear_death_4.png", null, null),
+						new Sprite("bear_death_5.png", null, null),
+						new Sprite("bear_death_6.png", null, null),
+						new Sprite("bear_death_7.png", null, null),
+						new Sprite("bear_death_8.png", null, null)];
+
+		var b_death_cycle = new SpriteCycle(b_deaths, death_walk_frequency);
+
+		var m_deaths = [new Sprite("minion_death_0.png", null, null),
+						new Sprite("minion_death_1.png", null, null),
+						new Sprite("minion_death_2.png", null, null),
+						new Sprite("minion_death_3.png", null, null),
+						new Sprite("minion_death_4.png", null, null),
+						new Sprite("minion_death_5.png", null, null),
+						new Sprite("minion_death_6.png", null, null),
+						new Sprite("minion_death_7.png", null, null)];
+
+		var m_death_cycle = new SpriteCycle(m_deaths, death_walk_frequency);
+
+		bear.b_death_cycle = b_death_cycle;
+		bear.m_death_cycle = m_death_cycle;
 
 		// save a backup of the bear poses and cycle
 		bear.b_poses = bear_poses;
 		bear.b_cycle = bear_cycle;
-
 
 		// minion walk cycle sprites
 		var minion1 = new Sprite("minion1.png", 2, 48);
 		var minion2 = new Sprite("minion2.png", 3, 50);
 		
 		// put minion walk cycle sprites in a sprite cycle
-		var minion_cycle = new SpriteCycle([minion1, minion2], bear_walk_frequency);
+		var minion_cycle = new SpriteCycle([minion1, minion2], bear_walk_frequency*1.5);
 
 		// minion poses sprites
 		var minion_crouch = new Sprite("minion_crouch.png", 0, 34);
@@ -343,25 +375,56 @@ function elina_game(){
 			celeb: minion_celeb
 		};
 
+		bear.is_minion = false;
+
 		bear.m_poses = minion_poses;
 		bear.m_cycle = minion_cycle;
 
-		bear.is_minion = false;
-
 		bear.become_minion = function(){
-			console.log("becoming minion");
+			bear.is_minion = true;
 			bear.set_cycle(bear.m_cycle);
 			bear.set_poses(bear.m_poses);
-			window.setTimeout(function(){g.player.become_bear()}, g.minion_time*1000);
+			bear.max_jumps = bear.m_max_jumps;
+			bear.speed = bear.m_speed;
+
+			window.clearTimeout(bear.minion_timeout);
+			bear.minion_timeout = window.setTimeout(function(){g.player.become_bear()}, g.minion_time*1000);
 		}
 
 		bear.become_bear = function(){
-			console.log("returning from  minion");
+			bear.is_minion = false;
+			bear.max_jumps = bear.b_max_jumps;
+			bear.speed = bear.b_speed;
 			bear.set_cycle(bear.b_cycle);
 			bear.set_poses(bear.b_poses);
 		}
 
-		// give bear a velocity!!
+		bear.wearing_hat = false;
+		bear.hat = null;
+
+		bear.wear_hat = function(hat_element){
+			bear.hat = hat_element;
+			bear.hat.pause_cycle();
+			bear.wearing_hat = true;
+
+			window.clearTimeout(bear.hat_timeout);
+			bear.hat_timeout = window.setTimeout(function(){g.player.remove_hat()}, g.hat_time*1000);
+		}
+
+		bear.remove_hat = function(){
+			bear.hat = null;
+			bear.wearing_hat = false;
+		}
+
+		bear.die = function(){
+			bear.remove_hat();
+			bear.set_cycle(bear.is_minion ? bear.m_death_cycle : bear.b_death_cycle);
+			bear.set_cycle_mode();
+			bear.x = c.width/2;//- bear.width()/2;
+			bear.y = c.height/2;// + bear.height()/2;
+		}
+
+		// give bear a velocity for jump physics
 		bear.velocity = 0;
 
 		// - is backwards, + is forwards, 0 is stopped
@@ -369,9 +432,13 @@ function elina_game(){
 
 		// how fast the bear moves
 		bear.speed = 2;
+		bear.b_speed = 2;
+		bear.m_speed = 4;
 
 		bear.jumps = 0;
 		bear.max_jumps = 2;
+		bear.b_max_jumps = 2;
+		bear.m_max_jumps = 5;
 
 		bear.jump = function(){
 			if(bear.jumps < bear.max_jumps){
@@ -413,13 +480,14 @@ function elina_game(){
 		this.obstacle_timer = window.setInterval(function(){g.add_obstacle()}, this.obstacle_frequency*1000);
 
 		// banana
-		this.banana_frequency = 2;//29; // hz
+		this.banana_frequency = 28; // hz
 		this.banana_timer = window.setInterval(function(){g.add_banana()}, this.banana_frequency*1000);
 
 		// bear settings
 		this.crouch_time = .4; // sec
 		this.celeb_time = .3; // sec
 		this.minion_time = 10; // sec
+		this.hat_time = 25; // sec
 
 		// pause and start
 		this.start_blink_frequency = 1; // hz
@@ -444,6 +512,7 @@ function elina_game(){
 		this.start_screen = true;
 		this.on_fire = false;
 		this.fire_frequency = .5;
+		this.game_over = false;
 
 		this.player = New_Bear();
 		this.player.x = 30;
@@ -499,15 +568,25 @@ function elina_game(){
 			this.elements_on_screen.splice(index, 1);
 		}
 
+		this.stop = function(){
+			this.speed = 0;
+			this.game_over = true;
+			// stop all timers except for the cycler
+		}
+
+		/*
 		this.pause = function(){
 			this.paused = !this.paused;
 			this.pause_color = "rgba(" + Math.random() * 35 + ", " + Math.random() * 35 + ", " + Math.random() * 35 + ", .7)";
 		}
+		*/
 	}
 	
 
 	function main_loop(){
-		step_frame();
+		if(!g.game_over){
+			step_frame();
+		}
 		render();
 		window.requestAnimationFrame(main_loop);
 	}
@@ -539,8 +618,12 @@ function elina_game(){
 						}
 					}else if(elem.type == "obstacle"){
 						// die
+						g.player.die()
+						g.stop();
+						return;
 					}else if(elem.type == "hat"){
 						// wear hat
+						g.player.wear_hat(elem);
 						g.remove_element(e);
 					}else if(elem.type == "banana"){
 						// become minion
@@ -563,6 +646,7 @@ function elina_game(){
 		if (keys_pressed[39]) { g.player.direction += g.player.speed*.8; }
 		if (keys_pressed[37]) { g.player.direction -= g.player.speed*1.5; }
 		g.player.x += g.player.direction;
+
 		// keep the player in bounds
 		g.player.x = Math.max(Math.min(g.player.x, c.width - g.player.width()), 0);
 
@@ -577,11 +661,15 @@ function elina_game(){
 			g.player.jumps = 0;
 		}
 
+		// keep the hat on the head
+		if(g.player.wearing_hat){
+			g.player.hat.x = g.player.x + g.player.width()*.25;
+			g.player.hat.y = g.player.y - g.player.height()*.9;
+		}
+
 		// only run when on the ground
 		if(g.player.jumps != 0){ g.player.pause_cycle(); }
 		else{ g.player.unpause_cycle(); }
-
-
 	}
 
 	function render(){
@@ -600,17 +688,21 @@ function elina_game(){
 	function doKeyDown(e){
 		keys_pressed[e.keyCode] = true;
 
-		//console.log(e.keyCode);
-		if (e.keyCode == 40){
-			//40 is down
-			g.player.do_pose_for_duration("crouch", g.crouch_time);
-		}else if (e.keyCode == 80){
-			// p for pause
-		}else if (e.keyCode == 13){
+		if(!g.game_over){
+			//console.log(e.keyCode);
+			if (e.keyCode == 40){
+				//40 is down
+				g.player.do_pose_for_duration("crouch", g.crouch_time);
+			}else if (e.keyCode == 80){
+				// p for pause
+			}else if(e.keyCode == 32 || e.keyCode == 38){
+				// space or up for jump
+				g.player.jump();
+			}
+		}
+
+		if (e.keyCode == 13){
 			// enter for start/Restart game
-		}else if(e.keyCode == 32 || e.keyCode == 38){
-			// space or up for jump
-			g.player.jump();
 		}
 	}
 
