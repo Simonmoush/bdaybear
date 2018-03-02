@@ -376,19 +376,19 @@ function elina_game(){
 		this.gravity = .5;
 
 		// carrot
-		this.carrot_frequency = 3; //hz
+		this.carrot_frequency = 2.3; //hz
 		this.carrot_timer = window.setInterval(function(){g.add_carrot()}, this.carrot_frequency*1000);
 
 		// hat
-		this.hat_frequency = 13; // hz
+		this.hat_frequency = 8.5; // hz
 		this.hat_timer = window.setInterval(function(){g.add_hat()}, this.hat_frequency*1000);
 
 		// obstacle
-		this.obstacle_frequency = 5; // hz
+		this.obstacle_frequency = 5.2; // hz
 		this.obstacle_timer = window.setInterval(function(){g.add_obstacle()}, this.obstacle_frequency*1000);
 
 		// banana
-		this.banana_frequency = 1;//29; // hz
+		this.banana_frequency = 29; // hz
 		this.banana_timer = window.setInterval(function(){g.add_banana()}, this.banana_frequency*1000);
 
 		// bear settings
@@ -509,7 +509,7 @@ function elina_game(){
 						if (g.player.get_current_pose() == "crouch"){
 							g.remove_element(e);
 							g.carrots_collected++;
-							g.speed += .1;
+							g.speed += .2;
 							g.player.do_pose_for_duration("celeb", .3);
 						}
 					}else if(elem.type == "obstacle"){
