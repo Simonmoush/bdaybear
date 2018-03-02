@@ -166,6 +166,14 @@ function elina_game(){
 			cycle.next_frame();
 		}
 
+		this.set_cycle = function(new_cycle){
+			cycle = new_cycle;
+		}
+
+		this.set_poses = function(new_poses){
+			poses = new_poses;
+		}
+
 		
 		this.draw = function(){
 			if (posing) {
@@ -232,7 +240,7 @@ function elina_game(){
 	// this just makes an element with the obstacle sprites and sprite cycle set up. it sets it in cycle mode
 	function New_Obstacle() {
 		var speech_bubble_frequency = 4;
-		var man_scale = 2;
+		var man_scale = 1.5;
 
 		// cycle sprites
 		var man1 = new Sprite("man1.png", 0, 23*man_scale);
@@ -262,7 +270,7 @@ function elina_game(){
 	function New_Hat() {
 		var hat_change_frequency = 8;
 		var hat_scale = 1;
-		var hat_height = 10;
+		var hat_height = 15;
 
 		// sprites
 		var hat1 = new Sprite("hat1.png", 0, hat_height*hat_scale);
@@ -317,6 +325,7 @@ function elina_game(){
 		bear.b_poses = bear_poses;
 		bear.b_cycle = bear_cycle;
 
+
 		// minion walk cycle sprites
 		var minion1 = new Sprite("minion1.png", 2, 48);
 		var minion2 = new Sprite("minion2.png", 3, 50);
@@ -334,7 +343,23 @@ function elina_game(){
 			celeb: minion_celeb
 		};
 
+		bear.m_poses = minion_poses;
+		bear.m_cycle = minion_cycle;
+
 		bear.is_minion = false;
+
+		bear.become_minion = function(){
+			console.log("becoming minion");
+			bear.set_cycle(bear.m_cycle);
+			bear.set_poses(bear.m_poses);
+			window.setTimeout(function(){g.player.become_bear()}, g.minion_time*1000);
+		}
+
+		bear.become_bear = function(){
+			console.log("returning from  minion");
+			bear.set_cycle(bear.b_cycle);
+			bear.set_poses(bear.b_poses);
+		}
 
 		// give bear a velocity!!
 		bear.velocity = 0;
@@ -388,7 +413,7 @@ function elina_game(){
 		this.obstacle_timer = window.setInterval(function(){g.add_obstacle()}, this.obstacle_frequency*1000);
 
 		// banana
-		this.banana_frequency = 29; // hz
+		this.banana_frequency = 2;//29; // hz
 		this.banana_timer = window.setInterval(function(){g.add_banana()}, this.banana_frequency*1000);
 
 		// bear settings
@@ -502,22 +527,26 @@ function elina_game(){
 			// horizontal overlap
 			if (elem.x <= g.player.x + g.player.width() && elem.x > g.player.x - elem.width()){
 				// vertical overlap
-				if (elem.y <= g.player.y + g.player.height() && elem.y > g.player.y - elem.height()){
+				if (elem.y <= g.player.y + elem.height() && elem.y > g.player.y - g.player.height()){
 					// collision
 					if(elem.type == "carrot"){
 						// collect if crouched
 						if (g.player.get_current_pose() == "crouch"){
 							g.remove_element(e);
 							g.carrots_collected++;
-							g.speed += .2;
-							g.player.do_pose_for_duration("celeb", .3);
+							g.speed += .15;
+							g.player.do_pose_for_duration("celeb", g.celeb_time);
 						}
 					}else if(elem.type == "obstacle"){
 						// die
 					}else if(elem.type == "hat"){
 						// wear hat
+						g.remove_element(e);
 					}else if(elem.type == "banana"){
 						// become minion
+						g.remove_element(e);
+						g.player.become_minion();
+
 					}
 				}
 			}
@@ -574,7 +603,7 @@ function elina_game(){
 		//console.log(e.keyCode);
 		if (e.keyCode == 40){
 			//40 is down
-			g.player.do_pose_for_duration("crouch", .3);
+			g.player.do_pose_for_duration("crouch", g.crouch_time);
 		}else if (e.keyCode == 80){
 			// p for pause
 		}else if (e.keyCode == 13){
