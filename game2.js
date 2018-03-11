@@ -819,14 +819,14 @@ function elina_game(){
 		keys_pressed[e.keyCode] = true;
 
 		if(!g.game_over){
-			//console.log(e.keyCode);
-			if (e.keyCode == 40){
-				//40 is down
+			// console.log(e.keyCode);
+			if (e.keyCode == 40) {
+				// 40 is down arrow key
 				g.player.do_pose_for_duration("crouch", g.crouch_time);
-			}else if (e.keyCode == 80){
+			} else if (e.keyCode == 80){
 				// p for pause
 				if(!showing_start){ g.pause();}
-			}else if(e.keyCode == 32 || e.keyCode == 38){
+			} else if(e.keyCode == 32 || e.keyCode == 38){
 				// space or up for jump
 				if (!g.paused){ g.player.jump();}
 			}
@@ -834,6 +834,10 @@ function elina_game(){
 
 		if (e.keyCode == 13){
 			// enter for start/Restart game
+			if (g.paused) {
+				g.pause();
+				return
+			}
 
 			g.pause_timers();
 			g = new Game();
