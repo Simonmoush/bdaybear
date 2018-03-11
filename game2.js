@@ -1,50 +1,50 @@
-function Timer(callback, duration){ // takes seconds
-	var start_time = Date.now();
-	var timerID = null;
-	var remaining = duration*1000;
-
-	this.resume = function(){
-		if(timerID == null){
-			start_time = Date.now();
-			window.clearTimeout(timerID);
-			timerID = window.setTimeout(callback, remaining);
-		}
-	}
-
-	this.pause = function(){
-		var elapsed = Date.now() - start_time;
-		remaining -= elapsed;
-		window.clearTimeout(timerID);
-		timerID = null;
-	}
-
-	this.resume();
-}
-
-// frequency in hz, fuzz: 0.2 means the frequency will vary from f*.9 to f*1.1
-// null will be strict interval
-function Interval(callback, frequency, fuzz){
-	var fuzzy_interval = function(){
-		if (fuzz == null) {
-			return 1/frequency;
-		} else{
-			return 1/(frequency + (frequency*((Math.random()*fuzz) - fuzz/2)));
-		}
-	}
-	var repeat = function(){
-		callback();
-		t = new Timer(repeat, fuzzy_interval());
-	}
-	this.pause = function(){
-		t.pause();
-	}
-	this.resume = function(){
-		t.resume();
-	}
-	var t = new Timer(repeat, fuzzy_interval());
-}
-
 function elina_game(){
+
+	function Timer(callback, duration){ // takes seconds
+		var start_time = Date.now();
+		var timerID = null;
+		var remaining = duration*1000;
+
+		this.resume = function(){
+			if(timerID == null){
+				start_time = Date.now();
+				window.clearTimeout(timerID);
+				timerID = window.setTimeout(callback, remaining);
+			}
+		}
+
+		this.pause = function(){
+			var elapsed = Date.now() - start_time;
+			remaining -= elapsed;
+			window.clearTimeout(timerID);
+			timerID = null;
+		}
+
+		this.resume();
+	}
+
+	// frequency in hz, fuzz: 0.2 means the frequency will vary from f*.9 to f*1.1
+	// null will be strict interval
+	function Interval(callback, frequency, fuzz){
+		var fuzzy_interval = function(){
+			if (fuzz == null) {
+				return 1/frequency;
+			} else{
+				return 1/(frequency + (frequency*((Math.random()*fuzz) - fuzz/2)));
+			}
+		}
+		var repeat = function(){
+			callback();
+			t = new Timer(repeat, fuzzy_interval());
+		}
+		this.pause = function(){
+			t.pause();
+		}
+		this.resume = function(){
+			t.resume();
+		}
+		var t = new Timer(repeat, fuzzy_interval());
+	}
 
 	//setup canvas and context
 	var c = document.getElementById("game_window");
@@ -52,10 +52,17 @@ function elina_game(){
 	ctx.imageSmoothingEnabled = false; // turn off image smoothing to look more pixel/retro
 	ctx.font = "15px game";
 
+	var anim_frame = null;
+
 	// get keyboard events
 	var keys_pressed = {};
 	window.addEventListener("keydown", doKeyDown, true);
 	window.addEventListener("keyup", doKeyUp, true);
+
+
+	// should probably put this somewhere else...
+	var start_blink = true;
+	var showing_start = true;
 
 	// ==============
 	// Data Structures
@@ -226,7 +233,6 @@ function elina_game(){
 		this.set_poses = function(new_poses){
 			poses = new_poses;
 		}
-
 		
 		this.draw = function(){
 			if (posing) {
@@ -503,7 +509,7 @@ function elina_game(){
 
 		bear.jump = function(){
 			if(bear.jumps < bear.max_jumps){
-				bear.velocity = -7;
+				bear.velocity = -7.2;
 				bear.step_cycle();
 				bear.jumps++;
 			}
@@ -550,16 +556,6 @@ function elina_game(){
 		this.minion_time = 10; // sec
 		this.hat_time = 25; // sec
 
-		// start
-		this.start_blink_frequency = 1; // hz
-
-		// on fire
-		this.fire_color = "rgba(" + Math.round(Math.random() * 255) +
-						  ", " + Math.round(Math.random() * 255) +
-						  ", " + Math.round(Math.random() * 255) + ", .3)";
-		this.fire_frequency = .5; // hz
-		this.max_fire_frequency = .2; // hz
-		this.fire_timer = new Interval(this.change_fire, this.fire_frequency, null);
 		// ====================================
 
 		// game state
@@ -570,9 +566,6 @@ function elina_game(){
 		this.carrots_collected = 0;
 		this.paused = false;
 		this.pause_color = "rgba(20, 20, 20, .7)";
-		this.start_screen = true;
-		this.on_fire = false;
-		this.fire_frequency = .5;
 		this.game_over = false;
 
 		this.player = New_Bear();
@@ -629,26 +622,94 @@ function elina_game(){
 			this.elements_on_screen.splice(index, 1);
 		}
 
+		this.pause_timers = function(){
+			// game timers
+			g.carrot_timer.pause();
+			g.hat_timer.pause();
+			g.obstacle_timer.pause();
+			g.banana_timer.pause();
+
+			//bear timers
+			if (g.player.minion_timeout != null){
+				g.player.minion_timeout.pause();
+			}
+			if (g.player.hat_timeout != null){
+				g.player.hat_timeout.pause();
+			}
+		}
+
+		this.resume_timers = function(){
+			// game timers
+			g.carrot_timer.resume();
+			g.hat_timer.resume();
+			g.obstacle_timer.resume();
+			g.banana_timer.resume();
+
+			//bear timers
+			if (g.player.minion_timeout != null){
+				g.player.minion_timeout.resume();
+			}
+			if (g.player.hat_timeout != null){
+				g.player.hat_timeout.resume();
+			}
+		}
+
 		this.stop = function(){
 			this.speed = 0;
 			this.game_over = true;
-			// stop all timers except for the cycler
+			this.pause_timers();
 		}
 
 		this.pause = function(){
 			this.paused = !this.paused;
-			// pause all timers
 			this.pause_color = "rgba(" + Math.random() * 35 + ", " + Math.random() * 35 + ", " + Math.random() * 35 + ", .7)";
+			if(this.paused){
+				this.pause_timers();
+			}else{
+				this.resume_timers();
+				anim_frame = window.requestAnimationFrame(main_loop);
+			}
 		}
 	}
-	
 
 	function main_loop(){
 		if(!g.game_over && !g.paused){
 			step_frame();
 		}
 		render();
-		window.requestAnimationFrame(main_loop);
+		if(!g.paused){
+			anim_frame = window.requestAnimationFrame(main_loop);
+		}
+	}
+
+	function toggle_blink(){
+		start_blink = !start_blink;
+	}
+
+	function start_screen(){
+		// Background color
+		ctx.fillStyle = "rgb(80, 40, 0)";
+		ctx.fillRect(0, 0, c.width, c.height);
+
+		// Title
+		ctx.fillStyle = "white";
+		ctx.font = "30px game";
+		ctx.textAlign = "center"
+		ctx.fillText("Elina    Bear", c.width/2, c.height/3);
+
+		// Press Enter
+		ctx.font = "20px game";
+		if (start_blink){
+			ctx.fillText("press    enter", c.width/2, c.height/2);
+		}
+		// Controls
+		ctx.font = "10px game";
+		ctx.fillText("space---jump", c.width/2, c.height*.6);
+		ctx.fillText("Right/Left---move", c.width/2, c.height*.6 + 10);
+		ctx.fillText("Down---pick carrot", c.width/2, c.height*.6 + 20);
+		ctx.fillText("p---pause", c.width/2, c.height*.6 + 30);
+
+		anim_frame = window.requestAnimationFrame(start_screen);
 	}
 
 	function step_frame(){
@@ -745,7 +806,12 @@ function elina_game(){
 		g.player.draw();
 
 		if(g.paused){
-
+			ctx.fillStyle = g.pause_color;
+			ctx.fillRect(0, 0, c.width, c.height);
+			ctx.fillStyle = "white";
+			ctx.font = "30px game";
+			ctx.textAlign = "center"
+			ctx.fillText("Paused", c.width/2, c.height/2);
 		}
 	}
 
@@ -759,15 +825,27 @@ function elina_game(){
 				g.player.do_pose_for_duration("crouch", g.crouch_time);
 			}else if (e.keyCode == 80){
 				// p for pause
-				g.pause();
+				if(!showing_start){ g.pause();}
 			}else if(e.keyCode == 32 || e.keyCode == 38){
 				// space or up for jump
-				g.player.jump();
+				if (!g.paused){ g.player.jump();}
 			}
 		}
 
 		if (e.keyCode == 13){
 			// enter for start/Restart game
+
+			g.pause_timers();
+			g = new Game();
+			window.cancelAnimationFrame(anim_frame);
+
+			if(showing_start){
+				main_loop();
+				showing_start = false;
+			}else{
+				start_screen();
+				showing_start = true;
+			}
 		}
 	}
 
@@ -776,7 +854,9 @@ function elina_game(){
 	}
 
 	var g = new Game();
-	main_loop();
+
+	var press_enter_timer = new Interval(toggle_blink, 2, null);
+	start_screen();
 }
 
 elina_game();
