@@ -243,7 +243,7 @@ function elina_game(){
 	// this just makes an element with the obstacle sprites and sprite cycle set up. it sets it in cycle mode
 	function New_Obstacle() {
 		var speech_bubble_frequency = 4;
-		var man_scale = 1.5;
+		var man_scale = 1.3;
 
 		// cycle sprites
 		var man1 = new Sprite("man1.png", 0, 23*man_scale);
@@ -714,4 +714,31 @@ function elina_game(){
 	main_loop();
 }
 
-elina_game();
+//elina_game();
+function Timer(callback, duration){
+	var start_time = Date.now();
+	var timerID;
+	var remaining = duration;
+
+	this.resume = function(){
+		start_time = Date.now();
+		console.log("starting: " + remaining);
+		window.clearTimeout(timerID);
+		timerID = window.setTimeout(callback, remaining);
+	}
+
+	this.pause = function(){
+		var elapsed = Date.now() - start_time;
+		remaining -= elapsed;
+		console.log("pausing with : " + remaining + " left");
+		window.clearTimeout(timerID);
+	}
+
+	this.resume();
+}
+
+function Interval(){
+}
+
+function FuzzyInterval(){
+}
