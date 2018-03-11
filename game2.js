@@ -1,3 +1,51 @@
+function Timer(callback, duration){ // takes seconds
+	var start_time = Date.now();
+	var timerID = null;
+	var remaining = duration*1000;
+
+	this.resume = function(){
+		if(timerID == null){
+			start_time = Date.now();
+			console.log("starting: " + remaining);
+			window.clearTimeout(timerID);
+			timerID = window.setTimeout(callback, remaining);
+		}
+	}
+
+	this.pause = function(){
+		var elapsed = Date.now() - start_time;
+		remaining -= elapsed;
+		console.log("pausing with : " + remaining + " left");
+		window.clearTimeout(timerID);
+		timerID = null;
+	}
+
+	this.resume();
+}
+
+// frequency in hz, fuzz: 0.2 means the frequency will vary from f*.9 to f*1.1
+// null will be strict interval
+function Interval(callback, frequency, fuzz){
+	var fuzzy_interval = function(){
+		if (fuzz == null) {
+			return 1/frequency;
+		} else{
+			return 1/(frequency + (frequency*((Math.random()*fuzz) - fuzz/2)));
+		}
+	}
+	var repeat = function(){
+		callback();
+		t = new Timer(repeat, fuzzy_interval());
+	}
+	this.pause = function(){
+		t.pause();
+	}
+	this.resume = function(){
+		t.resume();
+	}
+	var t = new Timer(repeat, fuzzy_interval());
+}
+
 function elina_game(){
 
 	//setup canvas and context
@@ -714,31 +762,4 @@ function elina_game(){
 	main_loop();
 }
 
-//elina_game();
-function Timer(callback, duration){
-	var start_time = Date.now();
-	var timerID;
-	var remaining = duration;
-
-	this.resume = function(){
-		start_time = Date.now();
-		console.log("starting: " + remaining);
-		window.clearTimeout(timerID);
-		timerID = window.setTimeout(callback, remaining);
-	}
-
-	this.pause = function(){
-		var elapsed = Date.now() - start_time;
-		remaining -= elapsed;
-		console.log("pausing with : " + remaining + " left");
-		window.clearTimeout(timerID);
-	}
-
-	this.resume();
-}
-
-function Interval(){
-}
-
-function FuzzyInterval(){
-}
+elina_game();
