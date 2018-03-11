@@ -6,7 +6,6 @@ function Timer(callback, duration){ // takes seconds
 	this.resume = function(){
 		if(timerID == null){
 			start_time = Date.now();
-			console.log("starting: " + remaining);
 			window.clearTimeout(timerID);
 			timerID = window.setTimeout(callback, remaining);
 		}
@@ -15,7 +14,6 @@ function Timer(callback, duration){ // takes seconds
 	this.pause = function(){
 		var elapsed = Date.now() - start_time;
 		remaining -= elapsed;
-		console.log("pausing with : " + remaining + " left");
 		window.clearTimeout(timerID);
 		timerID = null;
 	}
@@ -106,13 +104,14 @@ function elina_game(){
 		}
 
 		this.do_cycle = function(){
-			if(timer != null) {return}// don't restart
-			timer = window.setInterval(this.next_frame, 1000/frequency);
+			if (timer == null){
+				timer = new Interval(this.next_frame, frequency, null);
+			}
 		}
 
 		this.pause_cycle = function(){
-			if(timer){
-				window.clearInterval(timer);
+			if(timer != null){
+				timer.pause();
 				timer = null;
 			}
 		}
@@ -175,8 +174,10 @@ function elina_game(){
 
 		this.set_cycle_mode = function(){
 			posing = false;
-			window.clearTimeout(this.pose_timeout);
-			pose_timeout = null;
+			if(pose_timeout != null){
+				pose_timeout.pause();
+				pose_timeout = null;
+			}
 
 			cycle.do_cycle();
 		}
@@ -184,8 +185,12 @@ function elina_game(){
 		this.set_pose_mode = function(pose){
 			posing = true;
 			cycle.pause_cycle();
-			window.clearTimeout(this.pose_timeout);
-			pose_timeout = null;
+
+			if(pose_timeout != null){
+				pose_timeout.pause();
+				pose_timeout = null;
+			}
+
 			current_pose = pose;
 		}
 
@@ -193,7 +198,7 @@ function elina_game(){
 			posing = true;
 			cycle.pause_cycle();
 			current_pose = pose;
-			pose_timeout = window.setTimeout(this.resume_cycle, duration*1000);
+			pose_timeout = new Timer(this.resume_cycle, duration);
 		}
 
 		this.pause_cycle = function(){
@@ -428,15 +433,19 @@ function elina_game(){
 		bear.m_poses = minion_poses;
 		bear.m_cycle = minion_cycle;
 
+		bear.minion_timeout = null;
 		bear.become_minion = function(){
 			bear.is_minion = true;
 			bear.set_cycle(bear.m_cycle);
 			bear.set_poses(bear.m_poses);
 			bear.max_jumps = bear.m_max_jumps;
 			bear.speed = bear.m_speed;
-
-			window.clearTimeout(bear.minion_timeout);
-			bear.minion_timeout = window.setTimeout(function(){g.player.become_bear()}, g.minion_time*1000);
+			
+			if(bear.minion_timeout != null){
+				bear.minion_timeout.pause();
+				bear.minion_timeout = null;
+			}
+			bear.minion_timeout = new Timer(function(){g.player.become_bear()}, g.minion_time);
 		}
 
 		bear.become_bear = function(){
@@ -450,13 +459,17 @@ function elina_game(){
 		bear.wearing_hat = false;
 		bear.hat = null;
 
+		bear.hat_timeout = null;
 		bear.wear_hat = function(hat_element){
 			bear.hat = hat_element;
 			bear.hat.pause_cycle();
 			bear.wearing_hat = true;
 
-			window.clearTimeout(bear.hat_timeout);
-			bear.hat_timeout = window.setTimeout(function(){g.player.remove_hat()}, g.hat_time*1000);
+			if (bear.hat_timeout != null){
+				bear.hat_timeout.pause();
+				bear.hat_timeout == null;
+			}
+			bear.hat_timeout = new Timer(function(){g.player.remove_hat()}, g.hat_time);
 		}
 
 		bear.remove_hat = function(){
@@ -516,20 +529,20 @@ function elina_game(){
 		this.gravity = .5;
 
 		// carrot
-		this.carrot_frequency = 2.3; //hz
-		this.carrot_timer = window.setInterval(function(){g.add_carrot()}, this.carrot_frequency*1000);
+		this.carrot_frequency = 1/2; //hz
+		this.carrot_timer = new Interval(function(){g.add_carrot()}, this.carrot_frequency, .8);
 
 		// hat
-		this.hat_frequency = 8.5; // hz
-		this.hat_timer = window.setInterval(function(){g.add_hat()}, this.hat_frequency*1000);
+		this.hat_frequency = 1/8.5; // hz
+		this.hat_timer = new Interval(function(){g.add_hat()}, this.hat_frequency, .4);
 
 		// obstacle
-		this.obstacle_frequency = 5.2; // hz
-		this.obstacle_timer = window.setInterval(function(){g.add_obstacle()}, this.obstacle_frequency*1000);
+		this.obstacle_frequency = 1/5.2; // hz
+		this.obstacle_timer = new Interval(function(){g.add_obstacle()}, this.obstacle_frequency, .6);
 
 		// banana
-		this.banana_frequency = 28; // hz
-		this.banana_timer = window.setInterval(function(){g.add_banana()}, this.banana_frequency*1000);
+		this.banana_frequency = 1/28; // hz
+		this.banana_timer = new Interval(function(){g.add_banana()}, this.banana_frequency, .2);
 
 		// bear settings
 		this.crouch_time = .4; // sec
@@ -537,7 +550,7 @@ function elina_game(){
 		this.minion_time = 10; // sec
 		this.hat_time = 25; // sec
 
-		// pause and start
+		// start
 		this.start_blink_frequency = 1; // hz
 
 		// on fire
@@ -546,7 +559,7 @@ function elina_game(){
 						  ", " + Math.round(Math.random() * 255) + ", .3)";
 		this.fire_frequency = .5; // hz
 		this.max_fire_frequency = .2; // hz
-		this.fire_timer = window.setInterval(this.change_fire, this.fire_frequency*1000);
+		this.fire_timer = new Interval(this.change_fire, this.fire_frequency, null);
 		// ====================================
 
 		// game state
@@ -622,17 +635,16 @@ function elina_game(){
 			// stop all timers except for the cycler
 		}
 
-		/*
 		this.pause = function(){
 			this.paused = !this.paused;
+			// pause all timers
 			this.pause_color = "rgba(" + Math.random() * 35 + ", " + Math.random() * 35 + ", " + Math.random() * 35 + ", .7)";
 		}
-		*/
 	}
 	
 
 	function main_loop(){
-		if(!g.game_over){
+		if(!g.game_over && !g.paused){
 			step_frame();
 		}
 		render();
@@ -731,6 +743,10 @@ function elina_game(){
 
 		//player
 		g.player.draw();
+
+		if(g.paused){
+
+		}
 	}
 
 	function doKeyDown(e){
@@ -743,6 +759,7 @@ function elina_game(){
 				g.player.do_pose_for_duration("crouch", g.crouch_time);
 			}else if (e.keyCode == 80){
 				// p for pause
+				g.pause();
 			}else if(e.keyCode == 32 || e.keyCode == 38){
 				// space or up for jump
 				g.player.jump();
