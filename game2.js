@@ -558,6 +558,10 @@ function elina_game(){
 
 		// ====================================
 
+		// leaderboard username
+		this.username = window.localStorage.getItem("username") || "anonymous";
+		this.leaderboard = [];
+
 		// game state
 		this.speed = 3;
 		this.time = 0;
@@ -656,6 +660,7 @@ function elina_game(){
 
 		this.stop = function(){
 			this.speed = 0;
+			this.submit_score();
 			this.game_over = true;
 			this.pause_timers();
 		}
@@ -670,9 +675,45 @@ function elina_game(){
 				anim_frame = window.requestAnimationFrame(main_loop);
 			}
 		}
+
+		this.refresh_leaderboard = function() {
+		  console.log("refreshing leaderboard");
+                  fetch(new Request("https://jesskenney.com/leaderboard/get"))
+                      .then(response => response.json())
+                      .then(json => {
+                          if (json.results == null) {
+                              return;
+                          }
+                          else {
+                              if (json.results.length > 6) {
+                                  json.results.slice(0, 6);
+                              }
+                              this.leaderboard = json.results;
+                              console.log("New leaderboard", this.leaderboard);
+                          }
+                      });
+                }
+
+                this.submit_score = function() {
+                  fetch(new Request("https://jesskenney.com/leaderboard/post", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        "user": this.username,
+                        "score": this.carrots_collected
+                      })}))
+                    .then(r => {
+                      this.refresh_leaderboard();
+                    });
+                }
+
+                this.set_username = function(u) {
+                  u = u || "anonymous";
+                  window.localStorage.setItem("username", u);
+                  this.username = u;
+                }
 	}
 
-	function main_loop(){
+function main_loop(){
 		if(!g.game_over && !g.paused){
 			step_frame();
 		}
@@ -686,7 +727,7 @@ function elina_game(){
 		start_blink = !start_blink;
 	}
 
-	function start_screen(){
+	function start_screen(g, request_username_after){
 		// Background color
 		ctx.fillStyle = "rgb(80, 40, 0)";
 		ctx.fillRect(0, 0, c.width, c.height);
@@ -704,12 +745,27 @@ function elina_game(){
 		}
 		// Controls
 		ctx.font = "10px game";
-		ctx.fillText("space---jump", c.width/2, c.height*.6);
-		ctx.fillText("Right/Left---move", c.width/2, c.height*.6 + 10);
-		ctx.fillText("Down---pick carrot", c.width/2, c.height*.6 + 20);
-		ctx.fillText("p---pause", c.width/2, c.height*.6 + 30);
+		ctx.fillText("space---jump", c.width/4, c.height*.6);
+		ctx.fillText("Right/Left---move", c.width/4, c.height*.6 + 10);
+		ctx.fillText("Down---pick carrot", c.width/4, c.height*.6 + 20);
+		ctx.fillText("p---pause", c.width/4, c.height*.6 + 30);
 
-		anim_frame = window.requestAnimationFrame(start_screen);
+		// Leaderboard
+		console.log(g.leaderboard.length);
+		ctx.fillText("LEADERBOARD", c.width*3/4, c.height*.6);
+                var offset = 10;
+                for (var i=0; i<g.leaderboard.length; i++) {
+                  if (i > 6) { break; }
+                  var user = g.leaderboard[i].user;
+                  var score = g.leaderboard[i].score;
+                  ctx.fillText(user + ": " + score, c.width*3/4, c.height*.6 + offset);
+                  offset += 10;
+                }
+
+		anim_frame = window.requestAnimationFrame(() => start_screen(g));
+		if (request_username_after) {
+	          g.set_username(window.prompt("What is your name?", g.username));
+                }
 	}
 
 	function step_frame(){
@@ -734,6 +790,7 @@ function elina_game(){
 						if (g.player.get_current_pose() == "crouch"){
 							g.remove_element(e);
 							g.carrots_collected++;
+							g.submit_score();
 							g.speed += .15;
 							g.player.do_pose_for_duration("celeb", g.celeb_time);
 						}
@@ -818,6 +875,41 @@ function elina_game(){
 	function doKeyDown(e){
 		keys_pressed[e.keyCode] = true;
 
+		function restartGame() {
+			if (g.paused) {
+				g.pause();
+				return
+			}
+			g.pause_timers();
+			old_leaderboard = g.leaderboard;
+			g = new Game();
+			g.leaderboard = old_leaderboard;
+			window.cancelAnimationFrame(anim_frame);
+
+			if(showing_start){
+				main_loop();
+				showing_start = false;
+			}else{
+				start_screen(g);
+				showing_start = true;
+			}
+                }
+
+		if (showing_start) {
+                  // enter to play. all else types the name.
+                  if (e.keyCode == 13) {
+                    restartGame();
+                  } else {
+                    try {
+                      s = String.fromCharCode(e.keyCode);
+                      if (s) {
+                        g.username += s;
+                      }
+                    } catch (e) {}
+                  }
+                  return;
+                }
+
 		if(!g.game_over){
 			// console.log(e.keyCode);
 			if (e.keyCode == 40) {
@@ -833,23 +925,8 @@ function elina_game(){
 		}
 
 		if (e.keyCode == 13){
-			// enter for start/Restart game
-			if (g.paused) {
-				g.pause();
-				return
-			}
-
-			g.pause_timers();
-			g = new Game();
-			window.cancelAnimationFrame(anim_frame);
-
-			if(showing_start){
-				main_loop();
-				showing_start = false;
-			}else{
-				start_screen();
-				showing_start = true;
-			}
+		  // enter for start/Restart game
+		  restartGame();
 		}
 	}
 
@@ -858,9 +935,10 @@ function elina_game(){
 	}
 
 	var g = new Game();
+	g.refresh_leaderboard();
 
 	var press_enter_timer = new Interval(toggle_blink, 2, null);
-	start_screen();
+	start_screen(g, true /* request username after */);
 }
 
 elina_game();
