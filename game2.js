@@ -1,5 +1,8 @@
 function elina_game(){
 
+	var crtImg = new Image();
+	crtImg.src = "carrot.png";
+
 	function Timer(callback, duration){ // takes seconds
 		var start_time = Date.now();
 		var timerID = null;
@@ -851,6 +854,7 @@ function main_loop(){
 		// map (Img, read x, read y, read width, read height, write x, write y, write width, write height)
 		ctx.drawImage(g.map, g.map_pos, 0, c.width*2.5, 580, 0, 0, c.width, c.height);
 
+
 		//elements
 		for(var e = 0; e < g.elements_on_screen.length; e++){
 			g.elements_on_screen[e].draw();
@@ -867,6 +871,12 @@ function main_loop(){
 			ctx.textAlign = "center"
 			ctx.fillText("Paused", c.width/2, c.height/2);
 		}
+		// score
+		ctx.textAlign = "left"
+		ctx.font = "15px game";
+		ctx.fillStyle = g.paused ? "white" : "black";
+		ctx.fillText("x" + g.carrots_collected, 20, 15);
+		ctx.drawImage(crtImg, 0, 0, crtImg.width, crtImg.height, 10, 2, crtImg.width/2, crtImg.height/2);
 	}
 
 	function doKeyDown(e){
