@@ -872,41 +872,6 @@ function main_loop(){
 	function doKeyDown(e){
 		keys_pressed[e.keyCode] = true;
 
-		function restartGame() {
-			if (g.paused) {
-				g.pause();
-				return
-			}
-			g.pause_timers();
-			old_leaderboard = g.leaderboard;
-			g = new Game();
-			g.leaderboard = old_leaderboard;
-			window.cancelAnimationFrame(anim_frame);
-
-			if(showing_start){
-				main_loop();
-				showing_start = false;
-			}else{
-				start_screen(g);
-				showing_start = true;
-			}
-                }
-
-		if (showing_start) {
-                  // enter to play. all else types the name.
-                  if (e.keyCode == 13) {
-                    restartGame();
-                  } else {
-                    try {
-                      s = String.fromCharCode(e.keyCode);
-                      if (s) {
-                        g.username += s;
-                      }
-                    } catch (e) {}
-                  }
-                  return;
-                }
-
 		if(!g.game_over){
 			// console.log(e.keyCode);
 			if (e.keyCode == 40) {
@@ -923,7 +888,23 @@ function main_loop(){
 
 		if (e.keyCode == 13){
 		  // enter for start/Restart game
-		  restartGame();
+                  if (g.paused) {
+                          g.pause();
+                          return
+                  }
+                  g.pause_timers();
+                  old_leaderboard = g.leaderboard;
+                  g = new Game();
+                  g.leaderboard = old_leaderboard;
+                  window.cancelAnimationFrame(anim_frame);
+
+                  if(showing_start){
+                          main_loop();
+                          showing_start = false;
+                  }else{
+                          start_screen(g);
+                          showing_start = true;
+                  }
 		}
 	}
 
