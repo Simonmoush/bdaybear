@@ -1,4 +1,7 @@
 function elina_game(){
+	love_me_harder = new Audio('love_me_harder.mp3');
+	love_me_harder.loop = true;
+	love_me_harder.play();
 
 	var crtImg = new Image();
 	crtImg.src = "carrot.png";
@@ -877,6 +880,15 @@ function main_loop(){
 		ctx.fillStyle = g.paused ? "white" : "black";
 		ctx.fillText("x" + g.carrots_collected, 20, 15);
 		ctx.drawImage(crtImg, 0, 0, crtImg.width, crtImg.height, 10, 2, crtImg.width/2, crtImg.height/2);
+
+		if(g.game_over){
+			// Press Enter
+			ctx.font = "20px game";
+			ctx.textAlign = "center"
+			if (start_blink){
+				ctx.fillText("press    enter", c.width/2, c.height/4);
+			}
+		}
 	}
 
 	function doKeyDown(e){
