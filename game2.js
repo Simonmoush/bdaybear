@@ -677,7 +677,6 @@ function elina_game(){
 		}
 
 		this.refresh_leaderboard = function() {
-		  console.log("refreshing leaderboard");
                   fetch(new Request("https://jesskenney.com/leaderboard/get"))
                       .then(response => response.json())
                       .then(json => {
@@ -689,7 +688,6 @@ function elina_game(){
                                   json.results.slice(0, 6);
                               }
                               this.leaderboard = json.results;
-                              console.log("New leaderboard", this.leaderboard);
                           }
                       });
                 }
@@ -751,7 +749,6 @@ function main_loop(){
 		ctx.fillText("p---pause", c.width/4, c.height*.6 + 30);
 
 		// Leaderboard
-		console.log(g.leaderboard.length);
 		ctx.fillText("LEADERBOARD", c.width*3/4, c.height*.6);
                 var offset = 10;
                 for (var i=0; i<g.leaderboard.length; i++) {
