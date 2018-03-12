@@ -706,7 +706,9 @@ function elina_game(){
 
                 this.set_username = function(u) {
                   u = u || "anonymous";
-                  window.localStorage.setItem("username", u);
+                  if (u != "anonymous") {
+                    window.localStorage.setItem("username", u);
+                  }
                   this.username = u;
                 }
 	}
