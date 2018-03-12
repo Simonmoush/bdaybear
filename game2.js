@@ -887,24 +887,24 @@ function main_loop(){
 		}
 
 		if (e.keyCode == 13){
-		  // enter for start/Restart game
-                  if (g.paused) {
-                          g.pause();
-                          return
-                  }
-                  g.pause_timers();
-                  old_leaderboard = g.leaderboard;
-                  g = new Game();
-                  g.leaderboard = old_leaderboard;
-                  window.cancelAnimationFrame(anim_frame);
+                        // enter for start/Restart game
+                        if (g.paused) {
+                                g.pause();
+                                return
+                        }
+                        g.pause_timers();
+                        old_leaderboard = g.leaderboard;
+                        g = new Game();
+                        g.leaderboard = old_leaderboard;
+                        window.cancelAnimationFrame(anim_frame);
 
-                  if(showing_start){
-                          main_loop();
-                          showing_start = false;
-                  }else{
-                          start_screen(g);
-                          showing_start = true;
-                  }
+                        if(showing_start){
+                                main_loop();
+                                showing_start = false;
+                        }else{
+                                start_screen(g);
+                                showing_start = true;
+                        }
 		}
 	}
 
