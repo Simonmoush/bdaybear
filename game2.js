@@ -565,8 +565,8 @@ function elina_game(){
 		// ====================================
 
 		// leaderboard username
-		this.username = window.localStorage.getItem("username") || "anonymous";
-		this.leaderboard = [];
+		//this.username = window.localStorage.getItem("username") || "anonymous";
+		//this.leaderboard = [];
 
 		// game state
 		this.speed = 3;
@@ -666,7 +666,7 @@ function elina_game(){
 
 		this.stop = function(){
 			this.speed = 0;
-			this.submit_score();
+			//this.submit_score();
 			this.game_over = true;
 			this.pause_timers();
 		}
@@ -682,6 +682,7 @@ function elina_game(){
 			}
 		}
 
+		/*
 		this.refresh_leaderboard = function() {
                   fetch(new Request("https://jesskenney.com/leaderboard/get"))
                       .then(response => response.json())
@@ -717,6 +718,7 @@ function elina_game(){
                   }
                   this.username = u;
                 }
+		*/
 	}
 
 function main_loop(){
@@ -757,6 +759,7 @@ function main_loop(){
 		ctx.fillText("p---pause", c.width/4, c.height*.6 + 30);
 
 		// Leaderboard
+		/*
 		ctx.fillText("LEADERBOARD", c.width*3/4, c.height*.6);
                 var offset = 10;
                 for (var i=0; i<g.leaderboard.length; i++) {
@@ -766,11 +769,14 @@ function main_loop(){
                   ctx.fillText(user + ": " + score, c.width*3/4, c.height*.6 + offset);
                   offset += 10;
                 }
+		*/
 
 		anim_frame = window.requestAnimationFrame(() => start_screen(g));
+		/*
 		if (request_username_after) {
 	          g.set_username(window.prompt("What is your name?", g.username));
                 }
+		*/
 	}
 
 	function step_frame(){
@@ -795,7 +801,7 @@ function main_loop(){
 						if (g.player.get_current_pose() == "crouch"){
 							g.remove_element(e);
 							g.carrots_collected++;
-							g.submit_score();
+							//g.submit_score();
 							g.speed += .15;
 							g.player.do_pose_for_duration("celeb", g.celeb_time);
 						}
@@ -917,9 +923,9 @@ function main_loop(){
                               return
                       }
                       g.pause_timers();
-                      old_leaderboard = g.leaderboard;
+                      //old_leaderboard = g.leaderboard;
                       g = new Game();
-                      g.leaderboard = old_leaderboard;
+                      //g.leaderboard = old_leaderboard;
                       window.cancelAnimationFrame(anim_frame);
 
                       if(showing_start){
@@ -937,7 +943,7 @@ function main_loop(){
 	}
 
 	var g = new Game();
-	g.refresh_leaderboard();
+	//g.refresh_leaderboard();
 
 	var press_enter_timer = new Interval(toggle_blink, 2, null);
 	start_screen(g, true /* request username after */);
